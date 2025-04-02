@@ -44,6 +44,8 @@ Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`)
     - **Backend:** Python with FastAPI
     - **Frontend:** Next.js (React) with Tailwind CSS
     - **Development Environment:** Local setup for both frontend and backend.
+    - **Primary Dev OS:** macOS
+    - **Primary Python Version:** Python 3 (specific version TBD, managed via venv)
 - **Data Storage (Local Development):**
     - **Database:** PostgreSQL (requires local installation and server running).
     - **Media Files (Audio):** Stored directly on the filesystem (e.g., in `data/audio/`).
