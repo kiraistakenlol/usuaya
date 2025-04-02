@@ -1,2 +1,4 @@
 fastapi
-uvicorn[standard] 
+uvicorn[standard]
+sqlmodel
+psycopg2-binary # PostgreSQL driver 
