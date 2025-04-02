@@ -1,43 +1,95 @@
 #!/bin/bash
-# Simple script to start backend and frontend for development
+set -e # Exit immediately if a command exits with a non-zero status.
 
-# IMPORTANT: Ensure ports 8000 and 3000 are free before running this script.
-# Stop any previous instances of the backend or frontend servers.
+FRONTEND_PORT=3000
+BACKEND_PORT=8000
 
-echo "Starting backend in background (localhost:8000)..."
+echo "Checking for existing processes..."
+
+# Function to kill process by port
+kill_process_on_port() {
+  local port=$1
+  local pid=$(lsof -ti :${port} || true)
+  if [ -n "$pid" ]; then
+    echo "Process $pid found using port $port. Attempting to kill..."
+    # Try gentle kill first, then force
+    kill $pid 2>/dev/null || kill -9 $pid 2>/dev/null || echo "Failed to kill process $pid (maybe already stopped?)."
+    sleep 1 # Give OS time to release port
+  else
+    echo "Port $port is free."
+  fi
+}
+
+kill_process_on_port $FRONTEND_PORT
+kill_process_on_port $BACKEND_PORT
+
+BACKEND_NEW_PID=""
+
+# Function to clean up backend process on exit
+cleanup() {
+  echo
+  if [ -n "$BACKEND_NEW_PID" ]; then
+    echo "Script interrupted/exiting. Stopping backend (PID $BACKEND_NEW_PID)..."
+    # Check if the process still exists before killing
+    if kill -0 $BACKEND_NEW_PID 2>/dev/null; then
+        # Try gentle kill first, then force
+        kill $BACKEND_NEW_PID 2>/dev/null || kill -9 $BACKEND_NEW_PID 2>/dev/null
+        wait $BACKEND_NEW_PID 2>/dev/null # Wait briefly for cleanup
+        echo "Backend stopped."
+    else
+        echo "Backend process $BACKEND_NEW_PID already stopped or not found."
+    fi
+  else
+    echo "No backend process PID recorded to stop."
+  fi
+}
+
+# Trap SIGINT (Ctrl+C) and EXIT signals to run cleanup function
+trap cleanup SIGINT EXIT
+
+echo "Starting backend in background (localhost:$BACKEND_PORT)..."
 (
   cd backend || exit 1
-  # Assuming venv is named 'venv' and python is accessible
-  # Use python -m to avoid PATH issues if activation fails
+  # Check and create venv if it doesn't exist
+  if [ ! -d "venv" ]; then
+      echo "Virtual environment 'venv' not found in backend/. Creating..."
+      python3 -m venv venv # Make sure python3 is available
+  fi
   source venv/bin/activate
-  python -m uvicorn main:app --reload --port 8000
-) > backend.log 2>&1 &
-BACKEND_PID=$!
-echo "Backend process started with PID $BACKEND_PID. Logging to backend.log"
+  echo "Running: python -m uvicorn main:app --reload --port $BACKEND_PORT"
+  # Start backend and capture its PID
+  python -m uvicorn main:app --reload --port $BACKEND_PORT > ../backend.log 2>&1 &
+  BACKEND_NEW_PID=$!
+  echo $BACKEND_NEW_PID > ../backend.pid # Store PID in a file
+) 
+echo "Backend process starting with PID $(cat backend.pid). Logging to backend.log"
 
 # Give backend a moment to start up
-echo "Waiting for backend to initialize..."
-sleep 4 # Increased sleep slightly
+echo "Waiting for backend to initialize (3s)..."
+sleep 3 # Adjust if needed
 
-# Check if backend process is still running before starting frontend
-if ! kill -0 $BACKEND_PID 2>/dev/null; then
-  echo "ERROR: Backend process failed to start. Check backend.log for details." >&2
-  exit 1
+# Check if backend started successfully (check if PID exists)
+if ! kill -0 $(cat backend.pid) 2>/dev/null; then
+    echo "ERROR: Backend process failed to start. Check backend.log for details." >&2
+    rm -f backend.pid # Clean up pid file
+    exit 1
 fi
 
-echo "Starting frontend in foreground (localhost:3000)..."
+echo "Starting frontend in foreground (localhost:$FRONTEND_PORT)..."
 (
   cd frontend || exit 1
-  npm run dev -- --port 3000 # Explicitly set port
+  echo "Running: npm run dev -- --port $FRONTEND_PORT"
+  # If npm run dev fails, the script will exit due to set -e, triggering the trap
+  npm run dev -- --port $FRONTEND_PORT
 )
 
-# When frontend (npm run dev) is stopped (e.g., Ctrl+C), kill the background backend process
-echo "Frontend stopped. Attempting to stop backend (PID $BACKEND_PID)..."
-# Check if the process exists before trying to kill it
-if kill -0 $BACKEND_PID 2>/dev/null; then
-  kill $BACKEND_PID
-  wait $BACKEND_PID 2>/dev/null # Wait briefly for cleanup
-  echo "Backend stopped."
-else
-  echo "Backend process (PID $BACKEND_PID) already stopped."
-fi 
+# Normal exit (if frontend finishes without error) will also trigger the trap
+echo "Frontend process finished."
+
+# Clean up PID file on successful script completion (trap handles abnormal exit)
+rm -f backend.pid
+
+echo "Frontend stopped. Stopping backend (PID $BACKEND_NEW_PID)..."
+kill $BACKEND_NEW_PID
+wait $BACKEND_NEW_PID 2>/dev/null # Wait briefly for cleanup
+echo "Backend stopped." 
