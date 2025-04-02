@@ -44,6 +44,9 @@ Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`)
     - **Backend:** Python with FastAPI
     - **Frontend:** Next.js (React) with Tailwind CSS
     - **Development Environment:** Local setup for both frontend and backend.
+- **Data Storage (Local Development):**
+    - **Database:** PostgreSQL (requires local installation and server running).
+    - **Media Files (Audio):** Stored directly on the filesystem (e.g., in `data/audio/`).
 
 ## README Update Rules
 
