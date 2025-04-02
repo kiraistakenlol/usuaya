@@ -34,13 +34,16 @@ Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`)
 - [ ] Integrate with an AI model to provide grammar explanations for selected words or sentences within the application.
 
 **Foundation:**
-- [ ] Define project architecture (e.g., language/framework choice, frontend/backend separation).
+- [X] Define project architecture (e.g., language/framework choice, frontend/backend separation).
 - [X] Initialize project structure and status tracking.
 
 ## Key Decisions & Conventions
 
 (Record important architectural choices, coding style guides, etc.)
-- 
+- **Technology Stack:**
+    - **Backend:** Python with FastAPI
+    - **Frontend:** Next.js (React) with Tailwind CSS
+    - **Development Environment:** Local setup for both frontend and backend.
 
 ## README Update Rules
 
