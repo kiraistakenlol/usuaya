@@ -4,17 +4,38 @@ This file tracks the overall status, plans, and conventions for this project. It
 
 ## Project Vision
 
-(A concise description of the project's ultimate goal.)
+Create an application to streamline a personalized Spanish learning workflow. The app should automate text generation (Argentinian Spanish, using known/unknown vocabulary), translation, and text-to-speech generation. It should provide an integrated interface for consuming this content, allowing granular audio playback tied to text segments, spaced repetition of vocabulary, and in-app grammar explanations. The primary goal is to make the learning process less time-consuming and more effective.
 
 ## Current State
 
-(A brief summary of the project's current status and implemented features.)
+Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`) and git repository. No application code exists yet.
 
 ## Roadmap / Next Steps
 
 (Use Markdown checklists for planned tasks or features)
-- [ ] Initialize project structure
-- [ ] ...
+
+**Core Workflow Automation (Problem A):**
+- [ ] Integrate with an AI model (like GPT) for text generation based on vocabulary lists and regional preferences (Argentinian Spanish).
+- [ ] Integrate with a Text-to-Speech (TTS) service to generate audio for Spanish text.
+- [ ] Integrate with an AI model or translation service for English translation.
+- [ ] Develop a mechanism to store/manage generated content sets (Spanish text, English translation, audio file). (Initially, maybe simple file storage, later potentially a database).
+- [ ] Optional: Explore Telegram Bot integration for delivering content (or build a dedicated UI).
+
+**Enhanced Playback (Problem B):**
+- [ ] Develop a UI that displays Spanish text alongside its translation.
+- [ ] Implement synchronized playback: clicking a sentence/word in the Spanish text plays the corresponding audio segment.
+
+**Spaced Repetition & Vocabulary Management (Problem C):**
+- [ ] Create a system to store and track user's known/unknown vocabulary.
+- [ ] Implement logic to incorporate previously learned/unknown words into newly generated texts with adjustable frequency (Spaced Repetition System - SRS).
+- [ ] Optional: Rank vocabulary by real-world usage frequency.
+
+**In-App Grammar Explanations (Problem D):**
+- [ ] Integrate with an AI model to provide grammar explanations for selected words or sentences within the application.
+
+**Foundation:**
+- [ ] Define project architecture (e.g., language/framework choice, frontend/backend separation).
+- [X] Initialize project structure and status tracking.
 
 ## Key Decisions & Conventions
 
