@@ -9,7 +9,7 @@ interface Phrase {
 
 const API_URL = 'http://localhost:8000'; // Backend URL
 
-export default function Home() {
+export default function PhrasesPage() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [newPhrase, setNewPhrase] = useState('');
   const [loading, setLoading] = useState(true);
@@ -81,8 +81,8 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-12 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Spanish Phrases</h1>
+    <>
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">My Vocabulary (Phrases)</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -134,6 +134,6 @@ export default function Home() {
           <p className="text-gray-500">No phrases added yet.</p>
         )}
       </div>
-    </main>
+    </>
   );
 }
