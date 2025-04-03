@@ -20,7 +20,6 @@ const API_URL = 'http://localhost:8000';
 export default function TextsPage() {
   const [texts, setTexts] = useState<Text[]>([]);
   const [vocabulary, setVocabulary] = useState<Phrase[]>([]); // Existing phrases
-  const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const [manualInput, setManualInput] = useState('');
 
   const [loadingTexts, setLoadingTexts] = useState(true);
@@ -67,28 +66,27 @@ export default function TextsPage() {
     fetchVocabulary();
   }, []);
 
-  // Handle vocabulary selection change
+  // Handle selecting a word to add to the textarea
   const handleVocabSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const options = e.target.options;
-    const selected: string[] = [];
-    for (let i = 0, l = options.length; i < l; i++) {
-      if (options[i].selected) {
-        selected.push(options[i].value);
-      }
+    const selectedWord = e.target.value;
+    if (selectedWord) { // Check if it's not the default placeholder
+        // Append the selected word to the manual input, adding a newline if needed
+        setManualInput((prevInput) => 
+            prevInput ? `${prevInput}\n${selectedWord}` : selectedWord
+        );
+        // Reset the select box to the placeholder value
+        e.target.value = ""; 
     }
-    setSelectedVocab(selected);
   };
 
   // Handle text generation
   const handleGenerateText = async (e: FormEvent) => {
     e.preventDefault();
-    const combinedVocab = [
-        ...selectedVocab,
-        ...manualInput.split('\n').map(s => s.trim()).filter(Boolean)
-    ];
+    // Now only use manualInput, split into lines
+    const combinedVocab = manualInput.split('\n').map(s => s.trim()).filter(Boolean);
 
     if (combinedVocab.length === 0) {
-        setError("Please select or enter some vocabulary.");
+        setError("Please enter some vocabulary in the text area.");
         return;
     }
 
@@ -102,18 +100,13 @@ export default function TextsPage() {
             body: JSON.stringify({ vocabulary: combinedVocab }),
         });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Failed to generate text'})); // Try to parse error
+            const errorData = await response.json().catch(() => ({ detail: 'Failed to generate text'}));
             throw new Error(errorData.detail || 'Failed to generate text');
         }
-        // Success! Refetch the list of texts to show the new one
+        // Success! Refetch texts
         await fetchTexts(); 
-        // Clear inputs
-        setSelectedVocab([]);
+        // Clear manual input only
         setManualInput('');
-        // Reset select element visual state (optional, might need DOM manipulation or key change)
-        const selectElement = document.getElementById('vocab-select') as HTMLSelectElement | null;
-        if (selectElement) selectElement.selectedIndex = -1;
-
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Error generating text');
         console.error(err);
@@ -139,21 +132,21 @@ export default function TextsPage() {
         <form onSubmit={handleGenerateText}>
           {/* Grid for inputs */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-            {/* Vocabulary Selection */}
+            {/* Vocabulary Selection - Changed to single select */}
             <div>
               <label htmlFor="vocab-select" className="block text-sm font-medium text-gray-700 mb-1">
-                Select from Vocabulary:
+                Add Word from Vocabulary:
               </label>
               {loadingVocab ? (
                 <p className="text-sm text-gray-500">Loading vocabulary...</p>
               ) : (
                 <select
                   id="vocab-select"
-                  multiple
-                  value={selectedVocab}
                   onChange={handleVocabSelection}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md h-40"
+                  defaultValue="" // Start with placeholder selected
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-gray-900" // Added text color
                 >
+                  <option value="" disabled>Select a word to add...</option>
                   {vocabulary.map((phrase) => (
                     <option key={phrase.id} value={phrase.text}>{phrase.text}</option>
                   ))}
@@ -161,23 +154,28 @@ export default function TextsPage() {
               )}
             </div>
 
-            {/* Manual Input Area */}
+            {/* Manual Input Area - Now the primary input */}
             <div>
               <label htmlFor="manual-input" className="block text-sm font-medium text-gray-700 mb-1">
-                Or Enter New Vocabulary (one per line):
+                Vocabulary for New Text (one per line):
               </label>
               <textarea
                 id="manual-input"
-                rows={6}
+                rows={6} // Reduced rows slightly
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
                 className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md text-gray-900"
-                placeholder={`e.g.\nHola\n¿Cómo estás?\n...`}
+                placeholder={`Type words here,
+or select from list on left...
+--------------------
+Hola
+¿Cómo estás?
+...`}
               />
             </div>
           </div> {/* End of grid div */}
 
-          {/* Submit Button - outside the grid */}
+          {/* Submit Button */}
           <div className="flex justify-end">
             <button
               type="submit"
