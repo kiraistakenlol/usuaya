@@ -1,3 +1,4 @@
 .cursor/
 backend.pid
 backend.log
+data/
