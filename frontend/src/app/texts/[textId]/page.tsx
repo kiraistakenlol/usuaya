@@ -8,6 +8,7 @@ interface Text {
   id: number;
   spanish_content: string;
   english_translation: string | null;
+  audio_file_id: string | null; // Correct type: string or null
 }
 
 const API_URL = 'http://localhost:8000';
@@ -72,6 +73,17 @@ export default function TextDetailPage() {
                Text #{text.id}
              </h2>
              
+             {/* Audio Player */} 
+             {text.audio_file_id && (
+                <div className="mb-6">
+                    <h3 className="text-base font-semibold text-gray-700 mb-2">Audio:</h3>
+                    <audio controls className="w-full">
+                        <source src={`${API_URL}/audio/${text.audio_file_id}`} type="audio/mpeg" /> {/* Assuming MP3 for now */} 
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+             )}
+
              <div className="mb-6">
                 <h3 className="text-base font-semibold text-gray-700 mb-2">Spanish Content:</h3>
                 {/* Preserve whitespace and newlines from the stored text */}
