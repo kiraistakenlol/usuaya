@@ -5,6 +5,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 
+from .text_generator import generate_text_with_claude # Import the new function
+
 
 # Database Configuration (using details from docker-compose.yml)
 DATABASE_URL = "postgresql://user:password@localhost:5432/vibe_dev"
@@ -102,14 +104,20 @@ def delete_phrase(phrase_id: int, session: Session = Depends(get_session)):
 
 @app.post("/texts", response_model=TextRead, status_code=201)
 def generate_text(request: TextCreateRequest, session: Session = Depends(get_session)):
-    # --- Placeholder Generation Logic --- 
-    # TODO: Replace with actual GPT call in the future
     if not request.vocabulary:
         raise HTTPException(status_code=400, detail="Vocabulary list cannot be empty")
-        
-    generated_spanish = "\n".join(request.vocabulary) # Just join the input words for now
-    generated_english = "(English translation placeholder)" 
-    # --- End Placeholder Logic ---
+
+    # --- Call Claude for generation --- 
+    print(f"Generating text for vocabulary: {request.vocabulary}")
+    generated_spanish, generated_english = generate_text_with_claude(request.vocabulary)
+    print("--- Generation Complete ---")
+    print(f"Spanish: {generated_spanish[:100]}...") # Log snippet
+    print(f"English: {generated_english[:100]}...")
+
+    # Handle potential generation errors signaled by the function
+    if generated_spanish.startswith("Error generating text"):
+         raise HTTPException(status_code=503, detail=generated_english) # Return error detail from generator
+    # --- End Generation Call ---
 
     db_text = Text(
         spanish_content=generated_spanish,

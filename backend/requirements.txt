@@ -1,4 +1,5 @@
 fastapi
 uvicorn[standard]
 sqlmodel
-psycopg2-binary # PostgreSQL driver 
+psycopg2-binary # PostgreSQL driver
+anthropic # For Claude AI 
