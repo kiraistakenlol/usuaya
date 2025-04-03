@@ -13,8 +13,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: 'My Vocabulary', href: '#', icon: BookOpenIcon }, // TODO: Update href later
-    { name: 'My Texts', href: '#', icon: DocumentTextIcon }, // TODO: Update href later
+    { name: 'My Vocabulary', href: '/', icon: BookOpenIcon }, // Point to root (phrases page)
+    { name: 'My Texts', href: '/texts', icon: DocumentTextIcon }, // Point to the new page
   ];
 
   return (
