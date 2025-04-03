@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlmodel import SQLModel, Field, create_engine, Session, select
@@ -9,6 +9,7 @@ from sqlmodel import SQLModel, Field, create_engine, Session, select
 # Use direct import since main.py is run as a script
 from text_generator import generate_text_with_claude 
 from media_storage import save_media_file, get_media_file_path
+from audio_generator import generate_audio_elevenlabs # Import audio generator
 
 
 # Database Configuration (using details from docker-compose.yml)
@@ -108,47 +109,45 @@ def delete_phrase(phrase_id: int, session: Session = Depends(get_session)):
 # --- Endpoints: Texts (Generated Content) ---
 
 @app.post("/texts", response_model=TextRead, status_code=201)
-def generate_text_and_audio(
-    session: Session = Depends(get_session),
-    # Use Form(...) to receive vocabulary list as form field
-    vocabulary: List[str] = Form(...), 
-    # Optional audio file upload
-    audio_file: Optional[UploadFile] = File(None) 
+def create_text_and_audio(
+    request: TextCreateRequest, # Takes JSON body again
+    session: Session = Depends(get_session)
 ):
-    if not vocabulary:
+    if not request.vocabulary:
         raise HTTPException(status_code=400, detail="Vocabulary list cannot be empty")
 
-    # --- Placeholder: Generate Text (using Claude or similar) --- 
-    # In a real scenario, you might generate text first, then TTS
-    print(f"Generating text for vocabulary: {vocabulary}")
-    generated_spanish, generated_english = generate_text_with_claude(vocabulary)
+    # 1. Generate Text using Claude
+    print(f"Generating text for vocabulary: {request.vocabulary}")
+    generated_spanish, generated_english = generate_text_with_claude(request.vocabulary)
     print(f"Spanish: {generated_spanish[:100]}... English: {generated_english[:100]}...")
 
     if generated_spanish.startswith("Error generating text"):
          raise HTTPException(status_code=503, detail=generated_english)
-    # --- End Placeholder --- 
 
+    # 2. Generate Audio using ElevenLabs (if Spanish text was generated)
     saved_audio_id = None
-    if audio_file:
-        # --- Save Uploaded Audio --- 
-        try:
-            # Pass the file object and its original filename
-            saved_audio_id = save_media_file(audio_file.file, audio_file.filename)
-            print(f"Associated audio file ID: {saved_audio_id}")
-        except IOError as e:
-            raise HTTPException(status_code=500, detail=f"Failed to save audio file: {e}")
-        except Exception as e:
-             raise HTTPException(status_code=500, detail=f"Unexpected error saving audio file: {e}")
-        finally:
-            # Important: Close the file explicitly after reading/saving
-            # UploadFile.file is often a SpooledTemporaryFile
-            audio_file.file.close()
+    if generated_spanish and not generated_spanish.startswith("Error"):
+        audio_data = generate_audio_elevenlabs(generated_spanish)
+        if audio_data:
+            try:
+                # Save the audio data (BytesIO) from ElevenLabs
+                # Assume default mp3 extension for now, or get from ElevenLabs response if possible
+                saved_audio_id = save_media_file(audio_data, "generated_audio.mp3")
+                print(f"Saved generated audio file ID: {saved_audio_id}")
+            except IOError as e:
+                # Log error but maybe don't fail the whole request?
+                # Or raise HTTPException(status_code=500, detail=f"Failed to save generated audio: {e}")
+                print(f"Error saving generated audio: {e}") 
+            except Exception as e:
+                print(f"Unexpected error saving audio file: {e}")
+        else:
+            print("Audio generation failed or was skipped.")
             
-    # --- Save Text to DB --- 
+    # 3. Save Text (and audio ID if available) to DB 
     db_text = Text(
         spanish_content=generated_spanish,
         english_translation=generated_english,
-        audio_file_id=saved_audio_id # Store the unique filename
+        audio_file_id=saved_audio_id # Store unique filename, will be None if audio failed
     )
     session.add(db_text)
     session.commit()

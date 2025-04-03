@@ -2,4 +2,5 @@ fastapi
 uvicorn[standard]
 sqlmodel
 psycopg2-binary # PostgreSQL driver
-anthropic # For Claude AI 
+anthropic # For Claude AI
+elevenlabs # For Text-to-Speech 
