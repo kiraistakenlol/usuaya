@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+import Link from 'next/link';
 
 // Interfaces (can be moved to a types file later)
 interface Phrase {
@@ -195,15 +196,14 @@ Hola
             <ul className="divide-y divide-gray-200">
                 {texts.map((text) => (
                     <li key={text.id} className="py-4">
-                        {/* TODO: Make this a Link to /texts/{text.id} */}
-                        <div className="cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <Link href={`/texts/${text.id}`} className="block hover:bg-gray-50 p-2 rounded">
                            <p className="text-sm font-medium text-indigo-600 truncate mb-1">
                               Text #{text.id} {/* Simple title for now */}
                            </p>
                            <p className="text-sm text-gray-700 line-clamp-2">
                               {text.spanish_content}
                            </p>
-                        </div>
+                        </Link>
                     </li>
                 ))}
             </ul>

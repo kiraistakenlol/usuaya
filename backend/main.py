@@ -126,6 +126,13 @@ def get_texts(session: Session = Depends(get_session)):
     texts = session.exec(statement).all()
     return texts
 
+@app.get("/texts/{text_id}", response_model=TextRead)
+def get_text(text_id: int, session: Session = Depends(get_session)):
+    db_text = session.get(Text, text_id)
+    if not db_text:
+        raise HTTPException(status_code=404, detail="Text not found")
+    return db_text
+
 # Optional: Keep for direct execution if needed
 if __name__ == "__main__":
     import uvicorn
