@@ -171,7 +171,7 @@ export default function TextsPage() {
                 rows={6}
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
-                className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md"
+                className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md text-gray-900"
                 placeholder={`e.g.\nHola\n¿Cómo estás?\n...`}
               />
             </div>
