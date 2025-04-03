@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import Link from 'next/link';
 
 // Interfaces (can be moved to a types file later)
 interface Phrase {
@@ -66,23 +65,16 @@ export default function TextsPage() {
     fetchVocabulary();
   }, []);
 
-  // Handle selecting a word to add to the textarea
-  const handleVocabSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedWord = e.target.value;
-    if (selectedWord) { // Check if it's not the default placeholder
-        // Append the selected word to the manual input, adding a newline if needed
-        setManualInput((prevInput) => 
-            prevInput ? `${prevInput}\n${selectedWord}` : selectedWord
-        );
-        // Reset the select box to the placeholder value
-        e.target.value = ""; 
-    }
+  // Function to add a word from the list to the textarea
+  const handleAddVocabWord = (word: string) => {
+     setManualInput((prevInput) => 
+        prevInput ? `${prevInput}\n${word}` : word
+     );
   };
 
   // Handle text generation
   const handleGenerateText = async (e: FormEvent) => {
     e.preventDefault();
-    // Now only use manualInput, split into lines
     const combinedVocab = manualInput.split('\n').map(s => s.trim()).filter(Boolean);
 
     if (combinedVocab.length === 0) {
@@ -103,9 +95,7 @@ export default function TextsPage() {
             const errorData = await response.json().catch(() => ({ detail: 'Failed to generate text'}));
             throw new Error(errorData.detail || 'Failed to generate text');
         }
-        // Success! Refetch texts
         await fetchTexts(); 
-        // Clear manual input only
         setManualInput('');
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Error generating text');
@@ -132,41 +122,49 @@ export default function TextsPage() {
         <form onSubmit={handleGenerateText}>
           {/* Grid for inputs */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-            {/* Vocabulary Selection - Changed to single select */}
+            {/* Vocabulary Selection - Changed to scrollable list */}
             <div>
-              <label htmlFor="vocab-select" className="block text-sm font-medium text-gray-700 mb-1">
-                Add Word from Vocabulary:
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Add Word from Vocabulary (Click to add):
               </label>
               {loadingVocab ? (
                 <p className="text-sm text-gray-500">Loading vocabulary...</p>
               ) : (
-                <select
-                  id="vocab-select"
-                  onChange={handleVocabSelection}
-                  defaultValue="" // Start with placeholder selected
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md text-gray-900" // Added text color
-                >
-                  <option value="" disabled>Select a word to add...</option>
-                  {vocabulary.map((phrase) => (
-                    <option key={phrase.id} value={phrase.text}>{phrase.text}</option>
-                  ))}
-                </select>
+                <div className="mt-1 w-full h-40 overflow-y-auto border border-gray-300 rounded-md bg-white">
+                  {vocabulary.length === 0 ? (
+                      <p className="text-sm text-gray-500 p-2">No vocabulary found.</p>
+                  ) : (
+                     <ul className="divide-y divide-gray-200">
+                       {vocabulary.map((phrase) => (
+                         <li key={phrase.id}>
+                           <button
+                             type="button" // Prevent form submission
+                             onClick={() => handleAddVocabWord(phrase.text)}
+                             className="w-full text-left px-3 py-2 text-sm text-gray-900 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                           >
+                             {phrase.text}
+                           </button>
+                         </li>
+                       ))}
+                     </ul>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Manual Input Area - Now the primary input */}
+            {/* Manual Input Area */}
             <div>
               <label htmlFor="manual-input" className="block text-sm font-medium text-gray-700 mb-1">
                 Vocabulary for New Text (one per line):
               </label>
               <textarea
                 id="manual-input"
-                rows={6} // Reduced rows slightly
+                rows={6}
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value)}
                 className="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md text-gray-900"
                 placeholder={`Type words here,
-or select from list on left...
+or click list on left...
 --------------------
 Hola
 ¿Cómo estás?
