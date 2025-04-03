@@ -5,7 +5,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 
-from .text_generator import generate_text_with_claude # Import the new function
+# Use direct import since main.py is run as a script
+from text_generator import generate_text_with_claude 
 
 
 # Database Configuration (using details from docker-compose.yml)

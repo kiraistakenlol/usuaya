@@ -35,7 +35,7 @@ else
 fi
 
 # --- Start new backend process ---
-echo "Starting new backend process (logging to $BACKEND_LOG_FILE)..."
+echo "Starting new backend process (logging to terminal)..."
 (
   cd backend || exit 1
   # Ensure venv exists and activate it
@@ -49,8 +49,9 @@ echo "Starting new backend process (logging to $BACKEND_LOG_FILE)..."
   # echo "Installing/updating backend dependencies..."
   # pip install -r requirements.txt
 
-  # Start Uvicorn in background, redirect output, save PID
-  python -m uvicorn main:app --reload --port $BACKEND_PORT > "../$BACKEND_LOG_FILE" 2>&1 &
+  # Start Uvicorn in background, log to terminal, save PID
+  # NOTE: Logs will mix with script output when run this way.
+  python -m uvicorn main:app --reload --port $BACKEND_PORT &
   NEW_PID=$!
   echo $NEW_PID > "../$BACKEND_PID_FILE"
 ) 
