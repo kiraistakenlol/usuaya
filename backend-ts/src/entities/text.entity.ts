@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne, JoinColumn } from 'typeorm';
 import { Phrase } from './phrase.entity';
+import { Audio } from './audio.entity';
 
 @Entity('text')
 export class Text {
@@ -15,8 +16,12 @@ export class Text {
   @Column({ nullable: true })
   vocabulary_usage: string;
 
+  @OneToOne(() => Audio, audio => audio.text)
+  @JoinColumn({ name: 'audio_id' })
+  audio: Audio;
+
   @Column({ nullable: true })
-  audio_file_id: string;
+  audio_id: string;
 
   @ManyToMany(() => Phrase)
   @JoinTable({

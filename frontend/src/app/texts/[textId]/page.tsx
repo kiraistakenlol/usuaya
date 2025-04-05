@@ -119,7 +119,7 @@ export default function TextDetailPage() {
              </div>
              
              {/* Audio Player */}
-             {text.audio ? (
+             {text.audio?.id ? (
                 <div className="mb-6">
                     <h3 className="text-base font-semibold text-gray-700 mb-2">Audio:</h3>
                     <audio 
