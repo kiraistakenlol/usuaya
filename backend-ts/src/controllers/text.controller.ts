@@ -1,8 +1,9 @@
 import { Controller, Get, Post, Body, Param, Res, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { TextService } from '../services/text.service';
-import { CreateTextDto } from '../dto/text.dto';
+import { CreateTextDto, TextResponseDto } from '../dto/text.dto';
 import { isUUID } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 
 @Controller('texts')
 export class TextController {
@@ -11,35 +12,31 @@ export class TextController {
   constructor(private readonly textService: TextService) {}
 
   @Post()
-  async create(@Body() createTextDto: CreateTextDto) {
+  async create(@Body() createTextDto: CreateTextDto): Promise<TextResponseDto> {
     this.logger.log('Creating new text');
     const result = await this.textService.create(createTextDto);
     
-    // Log the response data
-    this.logger.log(`Text created with ID: ${result.id}`);
-    this.logger.log(`Response created_at: ${result.created_at}`);
-    this.logger.log(`Response created_at type: ${typeof result.created_at}`);
-    
-    return result;
+    // Transform the result to TextResponseDto
+    return plainToClass(TextResponseDto, result, { 
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true
+    });
   }
 
   @Get()
-  async findAll() {
+  async findAll(): Promise<TextResponseDto[]> {
     this.logger.log('Finding all texts');
     const texts = await this.textService.findAll();
     
-    // Log the first text's date if available
-    if (texts.length > 0) {
-      this.logger.log(`First text ID: ${texts[0].id}`);
-      this.logger.log(`First text created_at: ${texts[0].created_at}`);
-      this.logger.log(`First text created_at type: ${typeof texts[0].created_at}`);
-    }
-    
-    return texts;
+    // Transform the results to TextResponseDto
+    return texts.map(text => plainToClass(TextResponseDto, text, { 
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true
+    }));
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<TextResponseDto> {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid ID format. Must be a UUID.');
     }
@@ -47,23 +44,24 @@ export class TextController {
     this.logger.log(`Finding text with ID: ${id}`);
     const text = await this.textService.findOne(id);
     
-    // Log the response data
-    this.logger.log(`Text found with ID: ${text.id}`);
-    this.logger.log(`Response created_at: ${text.created_at}`);
-    this.logger.log(`Response created_at type: ${typeof text.created_at}`);
-    
-    return text;
+    // Transform the result to TextResponseDto
+    return plainToClass(TextResponseDto, text, { 
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true
+    });
   }
 
   @Get(':id/audio')
-  async getAudioFile(@Param('id') id: string, @Res() res: Response) {
+  async getAudioFile(@Param('id') id: string, @Res() res: Response): Promise<void> {
     if (!isUUID(id)) {
       throw new BadRequestException('Invalid ID format. Must be a UUID.');
     }
+    
     const audioBuffer = await this.textService.getAudioFile(id);
     if (!audioBuffer) {
       throw new NotFoundException(`Audio file for text with ID ${id} not found`);
     }
+    
     res.setHeader('Content-Type', 'audio/mpeg');
     res.send(audioBuffer);
   }

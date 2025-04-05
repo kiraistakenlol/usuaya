@@ -48,8 +48,8 @@ export class TextResponseDto {
   @IsOptional()
   @Expose()
   @Transform(({ value, obj }) => {
-    // If we have an audio object, return it
-    if (value) {
+    // If we have an audio object with an id, return it
+    if (value && value.id) {
       return value;
     }
     // If we have an audio_id but no audio object, return null
