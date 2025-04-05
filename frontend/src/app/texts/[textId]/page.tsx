@@ -5,10 +5,19 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 
 interface Text {
-  id: string; // Changed from number to string (UUID)
-  spanish_text: string; // Changed from spanish_content to spanish_text
+  id: string;
+  spanish_text: string;
   english_translation: string | null;
-  audio_file_id: string | null;
+  audio: {
+    id: string;
+    file_id: string;
+    word_timings: {
+      word: string;
+      start: number;
+      end: number;
+      confidence: number;
+    }[];
+  } | null;
   created_at: string;
 }
 
@@ -109,8 +118,8 @@ export default function TextDetailPage() {
                </p>
              </div>
              
-             {/* Audio Player */} 
-             {text.audio_file_id ? (
+             {/* Audio Player */}
+             {text.audio ? (
                 <div className="mb-6">
                     <h3 className="text-base font-semibold text-gray-700 mb-2">Audio:</h3>
                     <audio 
@@ -119,7 +128,7 @@ export default function TextDetailPage() {
                       onError={handleAudioError}
                     >
                         <source 
-                          src={`${API_URL}/audio/${text.audio_file_id}`} 
+                          src={`${API_URL}/texts/${text.id}/audio`} 
                           type="audio/mpeg" 
                         />
                         Your browser does not support the audio element.
@@ -128,7 +137,7 @@ export default function TextDetailPage() {
                       <p className="text-red-500 mt-2">{audioError}</p>
                     )}
                     <p className="text-xs text-gray-500 mt-1">
-                      Audio ID: {text.audio_file_id}
+                      Audio ID: {text.audio.id}
                     </p>
                 </div>
              ) : (

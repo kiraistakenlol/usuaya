@@ -13,7 +13,16 @@ interface Text {
   id: string;
   spanish_text: string;
   english_translation: string | null;
-  audio_file_id: string | null;
+  audio: {
+    id: string;
+    file_id: string;
+    word_timings: {
+      word: string;
+      start: number;
+      end: number;
+      confidence: number;
+    }[];
+  } | null;
   created_at: string;
 }
 
