@@ -2,3 +2,4 @@
 backend.pid
 backend.log
 data/
+.env
