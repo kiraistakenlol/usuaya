@@ -24,14 +24,14 @@ export class TextService {
   async create(createTextDto: CreateTextDto): Promise<Text> {
     this.logger.log(`Creating new text with vocabulary: ${createTextDto.vocabulary.join(', ')}`);
     
-    const { spanishText, englishTranslation, vocabularyUsage } = await this.textGeneratorService.generateText(createTextDto.vocabulary);
+    const { spanishText, englishTranslation, analysisData } = await this.textGeneratorService.generateText(createTextDto.vocabulary);
     this.logger.log(`Generated text: ${spanishText.substring(0, 50)}...`);
     
-    // Create the text entity first
+    // Create the text entity with the new analysis data
     const text = this.textRepository.create({
       spanish_text: spanishText,
       english_translation: englishTranslation,
-      vocabulary_usage: vocabularyUsage,
+      analysis_data: analysisData,
     });
     
     const savedText = await this.textRepository.save(text);
@@ -92,7 +92,7 @@ export class TextService {
           id: true,
           spanish_text: true,
           english_translation: true,
-          vocabulary_usage: true,
+          analysis_data: true,
           audio_id: true,
           created_at: true,
           updated_at: true,

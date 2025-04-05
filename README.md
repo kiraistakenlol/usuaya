@@ -45,4 +45,72 @@ The current version provides a web interface to:
 *   Access audio recordings for texts (when available)
 *   Manage vocabulary lists for text generation
 
-Data is stored persistently in the PostgreSQL database managed by Docker Compose. 
+## Key Technologies
+
+*   **Backend:** Python (FastAPI)
+*   **Frontend:** TypeScript (Next.js, React)
+*   **Database:** PostgreSQL (via Docker)
+*   **LLM for Text Generation & Analysis:** Anthropic Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`)
+*   **Audio Generation:** ElevenLabs
+
+Data is stored persistently in the PostgreSQL database managed by Docker Compose.
+
+## Claude API Response Structure
+
+When generating text, the backend requests a detailed analysis from the Claude API. The expected response is a JSON object with the following structure:
+
+```json
+{
+  "analysis_version": "1.0",
+  "target_audience_profile": "Russian speaker learning Argentinian Spanish, fluent in English",
+  "original_request": {
+    "vocabulary": ["list", "of", "requested", "words/phrases"]
+  },
+  "generated_text": {
+    "spanish_plain": "<Generated Spanish text as a single string>",
+    "tokens": [
+      {
+        "text": "<Word/Punctuation>",
+        "index": <integer, 0-based>,
+        "lemma": "<Base form>",
+        "pos": "<Part of Speech Tag>",
+        "english": "<Contextual English translation or null>",
+        "russian": "<Contextual Russian translation or null>",
+        "annotation_ids": ["<id_1>"]
+      }
+      // ...
+    ],
+    "annotations": {
+      "<unique_annotation_id>": {
+        "type": "<slang|idiom|grammar|cultural_note|etc.>",
+        "scope_indices": [<index1>, <index2>],
+        "label": "<Short display label>",
+        "explanation_spanish": "<Detailed explanation in Spanish>",
+        "explanation_english": "<Detailed explanation in English>",
+        "explanation_russian": "<Detailed explanation in Russian>"
+      }
+      // ...
+    }
+  },
+  "english_translation_plain": "<Full English translation>",
+  "vocabulary_usage_report": {
+    "requested": ["list", "of", "requested", "words/phrases"],
+    "found": [
+      {
+        "requested": "<word>",
+        "found_as": "<word_in_text>",
+        "token_indices": [<index>],
+        "lemma_match": <boolean>
+      }
+      // ...
+    ],
+    "notes": "<Summary of usage>"
+  }
+}
+```
+
+This structured data (`analysis_data` in the database) includes:
+*   The plain Spanish and English text.
+*   Tokenized Spanish text with POS tags, lemmas, and basic translations.
+*   Detailed annotations for slang, idioms, grammar points, etc., linked to specific tokens.
+*   This structure enables richer frontend features like contextual popups and highlighting. 

@@ -13,8 +13,8 @@ export class Text {
   @Column({ nullable: true })
   english_translation: string;
 
-  @Column({ nullable: true })
-  vocabulary_usage: string;
+  @Column({ type: 'jsonb', nullable: true })
+  analysis_data: any;
 
   @OneToOne(() => Audio, audio => audio.text)
   @JoinColumn({ name: 'audio_id' })

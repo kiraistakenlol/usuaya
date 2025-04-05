@@ -19,10 +19,6 @@ export class UpdateTextDto {
 
   @IsString()
   @IsOptional()
-  vocabulary_usage?: string;
-
-  @IsString()
-  @IsOptional()
   audio_file_id?: string;
 }
 
@@ -40,28 +36,27 @@ export class TextResponseDto {
   @Expose()
   english_translation: string | null;
 
-  @IsString()
   @IsOptional()
   @Expose()
-  vocabulary_usage: string | null;
+  analysis_data: any;
 
   @IsOptional()
   @Expose()
   @Transform(({ value, obj }) => {
-    // If we have an audio object with an id, return it
     if (value && value.id) {
       return value;
     }
-    // If we have an audio_id, try to load the audio
-    if (obj.audio_id) {
+    if (obj.audio_id && obj.audio) {
       return {
-        id: obj.audio_id,
-        file_id: obj.audio?.file_id || null,
-        word_timings: obj.audio?.word_timings || null,
-        text_id: obj.id,
-        created_at: obj.audio?.created_at || null,
-        updated_at: obj.audio?.updated_at || null
+        id: obj.audio.id || obj.audio_id,
+        file_id: obj.audio.file_id || null,
+        word_timings: obj.audio.word_timings || null,
+        created_at: obj.audio.created_at || null,
+        updated_at: obj.audio.updated_at || null
       };
+    }
+    if (obj.audio_id) {
+      return { id: obj.audio_id };
     }
     return null;
   })
@@ -71,7 +66,6 @@ export class TextResponseDto {
   @Expose()
   @Transform(({ value }) => {
     if (!value) return null;
-    // Convert the Date object to an ISO string to preserve UTC
     return value instanceof Date ? value.toISOString() : value;
   })
   created_at: string;
@@ -80,7 +74,6 @@ export class TextResponseDto {
   @Expose()
   @Transform(({ value }) => {
     if (!value) return null;
-    // Convert the Date object to an ISO string to preserve UTC
     return value instanceof Date ? value.toISOString() : value;
   })
   updated_at: string;

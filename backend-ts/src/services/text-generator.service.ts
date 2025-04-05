@@ -4,98 +4,151 @@ import Anthropic from '@anthropic-ai/sdk';
 
 @Injectable()
 export class TextGeneratorService {
-  private client: Anthropic;
+  private readonly anthropic: Anthropic;
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is not set');
-    }
-    this.client = new Anthropic({ apiKey });
+    this.anthropic = new Anthropic({
+      apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
+    });
   }
 
+  // --- NEW SYSTEM PROMPT requesting JSON --- START
   private readonly SYSTEM_PROMPT = `
-You are an AI assistant helping a Russian person living in Argentina learn Spanish. They are fluent in English.
-Generate a short, cohesive story or conversational text in Argentinian Spanish (using 'vos' conjugation, local slang where appropriate and natural). 
-The text MUST incorporate the vocabulary words/phrases provided by the user.
-After the Spanish text, provide an English translation of the generated Spanish text.
+You are a linguistic expert assistant specialized in Argentinian Spanish, English, and Russian. 
+Your task is to generate a short, cohesive story or conversational text in Argentinian Spanish (using 'vos' conjugation, local slang where appropriate and natural). The text MUST incorporate the vocabulary words/phrases provided by the user.
 
-Format the output strictly as follows:
+Instead of plain text, you MUST format your entire response as a single, valid JSON object adhering strictly to the schema described below. Do not include any text outside the JSON structure.
 
-[SPANISH TEXT]
-{Generated Spanish text here}
+JSON Schema:
+{
+  "analysis_version": "1.0",
+  "target_audience_profile": "Russian speaker learning Argentinian Spanish, fluent in English",
+  "original_request": {
+    "vocabulary": ["list", "of", "requested", "words/phrases"] // Populate this with the user's input
+  },
+  "generated_text": {
+    "spanish_plain": "<Generated Spanish text as a single string>",
+    "tokens": [
+      {
+        "text": "<Word/Punctuation>",
+        "index": <integer, 0-based>,
+        "lemma": "<Base form>",
+        "pos": "<Part of Speech Tag (e.g., DET, NOUN, VERB, ADJ, ADV, ADP, CONJ, PRON, PUNCT)>",
+        "english": "<Contextual English translation or null>",
+        "russian": "<Contextual Russian translation or null>",
+        "annotation_ids": ["<id_1>", "<id_2>"] // List of IDs linking to the \'annotations\' dictionary below, can be empty []
+      }
+      // ... more tokens
+    ],
+    "annotations": {
+      "<unique_annotation_id>": {
+        "type": "<Annotation type: \'slang\', \'idiom\', \'grammar\', \'cultural_note\', etc.>",
+        "scope_indices": [<index1>, <index2>], // List of token indices this annotation covers
+        "label": "<Short display label>",
+        "explanation_spanish": "<Detailed explanation in Spanish>",
+        "explanation_english": "<Detailed explanation in English>",
+        "explanation_russian": "<Detailed explanation in Russian>"
+      }
+      // ... more annotations
+    }
+  },
+  "english_translation_plain": "<Full English translation of the Spanish text>",
+  "vocabulary_usage_report": {
+    "requested": ["list", "of", "requested", "words/phrases"],
+    "found": [
+      {
+        "requested": "<word>",
+        "found_as": "<word_in_text>",
+        "token_indices": [<index>],
+        "lemma_match": <boolean> // Optional: true if matched by lemma
+      }
+      // ... more found words
+    ],
+    "notes": "<Summary, e.g., \'All requested vocabulary used.\'>"
+  }
+}
 
-[ENGLISH TRANSLATION]
-{English translation here}
-
-[VOCABULARY USAGE]
-{List each vocabulary word/phrase and how it was used in the text}
+Instructions for Analysis:
+1.  Tokenize the generated Spanish text meticulously, including punctuation.
+2.  For each token, provide its exact text, index, lemma, and Part-of-Speech tag.
+3.  Provide concise, context-aware English and Russian translations for each token where applicable.
+4.  Identify and create annotations for:
+    *   **Slang:** Any Argentinian slang or informal words/phrases.
+    *   **Idioms:** Multi-word expressions whose meaning isn\'t literal.
+    *   **Grammar Points:** Interesting or potentially confusing grammatical structures (e.g., specific tenses, pronoun usage like \'voseo\', subjunctive mood, complex sentence structures).
+    *   **Cultural Notes:** References specific to Argentinian culture if relevant.
+5.  Ensure each annotation has a unique ID, a clear type, the correct scope_indices covering the relevant tokens, a display label, and explanations in Spanish, English, and Russian.
+6.  Link tokens to their relevant annotations using the annotation_ids field.
+7.  Populate the \`original_request.vocabulary\` and \`vocabulary_usage_report\` sections accurately based on the user\'s input and the generated text.
+8.  Provide the full Spanish text as a single string in \`generated_text.spanish_plain\`.
+9.  Provide the full English translation as a single string in \`english_translation_plain\`.
+10. Double-check that the final output is a single, valid JSON object with no extra text before or after.
 `;
+  // --- NEW SYSTEM PROMPT requesting JSON --- END
 
-  async generateText(vocabulary: string[]): Promise<{
-    spanishText: string;
-    englishTranslation: string;
-    vocabularyUsage: string;
-  }> {
+  async generateText(vocabulary: string[]): Promise<{ spanishText: string; englishTranslation: string; analysisData: any }> {
+    const userPrompt = `Generate a text incorporating the following vocabulary: ${vocabulary.join(', ')}`;
+
     try {
-      console.log('TextGeneratorService: Starting text generation with vocabulary:', vocabulary);
-      
-      const vocabStr = vocabulary.map(word => `- ${word}`).join('\n');
-      const userPrompt = `Please generate a text using these vocabulary words/phrases:\n\n${vocabStr}\n\nRemember to use Argentinian Spanish with 'vos' conjugation and local expressions where appropriate.`;
-      
-      console.log('TextGeneratorService: Sending request to Claude API...');
-      const message = await this.client.messages.create({
-        model: 'claude-3-opus-20240229',
-        max_tokens: 1000,
+      // --- Log the prompts --- START
+      console.log('--- System Prompt Sent to Claude ---');
+      console.log(this.SYSTEM_PROMPT);
+      console.log('--- User Prompt Sent to Claude ---');
+      console.log(userPrompt);
+      console.log('-----------------------------------');
+      // --- Log the prompts --- END
+
+      const msg = await this.anthropic.messages.create({
+        model: 'claude-3-7-sonnet-20250219',
+        max_tokens: 10000,
         temperature: 0.7,
         system: this.SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
+        messages: [
+          { role: 'user', content: userPrompt }
+        ],
       });
-      console.log('TextGeneratorService: Received response from Claude API');
 
-      const response = message.content[0].type === 'text' ? message.content[0].text : '';
-      console.log('TextGeneratorService: Raw response:', response);
-      
-      let spanishText = '';
-      let englishTranslation = '';
-      let vocabularyUsage = '';
+      // Assuming the entire response content is the JSON string
+      // Safely access text content only if the first block is of type 'text'
+      const firstContentBlock = msg.content[0];
+      if (firstContentBlock?.type !== 'text') {
+        console.error('First content block from Claude is not text:', firstContentBlock);
+        throw new Error('Unexpected content block type received from Claude.');
+      }
+      const jsonResponseString = firstContentBlock.text;
+      console.log('Claude Raw Response:', jsonResponseString);
 
-      let currentSection: string | null = null;
-      for (const line of response.split('\n')) {
-        if (line.includes('[SPANISH TEXT]')) {
-          currentSection = 'spanish';
-          continue;
-        } else if (line.includes('[ENGLISH TRANSLATION]')) {
-          currentSection = 'english';
-          continue;
-        } else if (line.includes('[VOCABULARY USAGE]')) {
-          currentSection = 'vocabulary';
-          continue;
-        }
-
-        if (currentSection === 'spanish') {
-          spanishText += line + '\n';
-        } else if (currentSection === 'english') {
-          englishTranslation += line + '\n';
-        } else if (currentSection === 'vocabulary') {
-          vocabularyUsage += line + '\n';
-        }
+      // Attempt to parse the JSON string
+      let analysisData: any;
+      try {
+          analysisData = JSON.parse(jsonResponseString);
+      } catch (parseError) {
+          console.error('Failed to parse Claude response as JSON:', parseError);
+          console.error('Raw response was:', jsonResponseString);
+          // Handle error: Maybe return default values or throw an exception
+          // For now, we'll throw, but you might want a more robust fallback
+          throw new Error('Failed to get valid JSON analysis from Claude.');
       }
 
-      console.log('TextGeneratorService: Parsed sections:', {
-        spanishText: spanishText.trim(),
-        englishTranslation: englishTranslation.trim(),
-        vocabularyUsage: vocabularyUsage.trim(),
-      });
+      // Extract plain text parts from the parsed JSON
+      const spanishText = analysisData?.generated_text?.spanish_plain;
+      const englishTranslation = analysisData?.english_translation_plain;
+
+      // Validate that we got the necessary text parts
+      if (!spanishText || !englishTranslation) {
+           console.error('Parsed JSON missing required text fields:', analysisData);
+           throw new Error('Parsed analysis data is incomplete.');
+      }
 
       return {
-        spanishText: spanishText.trim(),
-        englishTranslation: englishTranslation.trim(),
-        vocabularyUsage: vocabularyUsage.trim(),
+        spanishText,
+        englishTranslation,
+        analysisData, // Return the full parsed JSON object
       };
+
     } catch (error) {
-      console.error('TextGeneratorService: Error generating text:', error);
-      throw error;
+      console.error('Error calling Anthropic API:', error);
+      throw new Error('Failed to generate text analysis.');
     }
   }
 } 
