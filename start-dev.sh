@@ -49,16 +49,15 @@ trap cleanup SIGINT EXIT
 
 echo "Starting backend in background (localhost:$BACKEND_PORT)..."
 (
-  cd backend || exit 1
-  # Check and create venv if it doesn't exist
-  if [ ! -d "venv" ]; then
-      echo "Virtual environment 'venv' not found in backend/. Creating..."
-      python3 -m venv venv # Make sure python3 is available
+  cd backend-ts || exit 1
+  # Check if node_modules exists, if not install dependencies
+  if [ ! -d "node_modules" ]; then
+      echo "Node modules not found. Installing dependencies..."
+      npm install
   fi
-  source venv/bin/activate
-  echo "Running: python -m uvicorn main:app --reload --port $BACKEND_PORT"
+  echo "Running: npm run start:dev"
   # Start backend and capture its PID
-  python -m uvicorn main:app --reload --port $BACKEND_PORT > ../backend.log 2>&1 &
+  npm run start:dev > ../backend.log 2>&1 &
   BACKEND_NEW_PID=$!
   echo $BACKEND_NEW_PID > ../backend.pid # Store PID in a file
 ) 

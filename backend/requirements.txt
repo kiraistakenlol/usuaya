@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-sqlmodel
-psycopg2-binary # PostgreSQL driver
-anthropic # For Claude AI
-elevenlabs # For Text-to-Speech
-python-dotenv # For loading environment variables 
