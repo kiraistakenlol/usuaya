@@ -115,8 +115,22 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
 
   // Split text into words and render with highlighting
   const renderText = () => {
+    // Find the index of the word where currentTime is strictly between start and end
+    let highlightIndex = wordTimings.findIndex(
+      timing => currentTime >= timing.start && currentTime < timing.end
+    );
+
+    // If in a gap or after the last word's end, find the last word that started
+    if (highlightIndex === -1 && wordTimings.length > 0 && currentTime > 0) {
+        const lastStartedIndex = wordTimings.findLastIndex(timing => currentTime >= timing.start);
+        // Ensure we don't highlight beyond the audio duration or before the first word
+        if (lastStartedIndex !== -1 && currentTime <= duration ) {
+             highlightIndex = lastStartedIndex;
+        }
+    }
+
     return wordTimings.map((timing, index) => {
-      const isCurrentWord = currentTime >= timing.start && currentTime <= timing.end;
+      const isCurrentWord = index === highlightIndex; // Highlight based on the calculated index
 
       return (
         <span
