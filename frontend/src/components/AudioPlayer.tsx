@@ -36,36 +36,43 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
         event.preventDefault();
         if (!playerRef.current || wordTimings.length === 0) return;
 
-        const currentWordIndex = wordTimings.findIndex(
-          timing => currentTime >= timing.start && currentTime < timing.end
+        // --- Revised Word Index Logic --- START
+        // Find the index of the last word that started at or before the current time
+        let currentWordIndex = wordTimings.findLastIndex(
+          timing => currentTime >= timing.start
         );
+
+        // If findLastIndex returns -1 and currentTime > 0, it means we are past the last word
+        if (currentWordIndex === -1 && currentTime > 0) {
+           currentWordIndex = wordTimings.length -1; // Treat as being at the last word
+        } else if (currentWordIndex === -1) {
+           currentWordIndex = 0; // If time is before the first word start, treat as index 0 for nav
+        }
+        
+        console.log(`Arrow Key: currentTime=${currentTime.toFixed(2)}, foundIndex=${currentWordIndex}`); // DEBUG LOG
 
         let targetWordIndex = -1;
 
         if (event.code === 'ArrowLeft') {
-          if (currentWordIndex > 0) {
-            targetWordIndex = currentWordIndex - 1;
-          } else if (currentWordIndex === -1) { // If no word is active, find the closest previous one
-             const potentialIndex = wordTimings.findLastIndex(t => t.start < currentTime);
-             targetWordIndex = potentialIndex !== -1 ? potentialIndex : 0;
-          } else {
-             targetWordIndex = 0; // Go to the first word if already at the first word
-          }
+          // Go to the previous index, but not below 0
+          targetWordIndex = Math.max(0, currentWordIndex - 1);
+           // Special case: if already at the first word, pressing left again should seek to 0 time
+           if (currentWordIndex === 0 && targetWordIndex === 0 && currentTime > 0) {
+               playerRef.current.seekTo(0, 'seconds');
+               return; // Don't proceed further
+           }
         } else if (event.code === 'ArrowRight') {
-          if (currentWordIndex !== -1 && currentWordIndex < wordTimings.length - 1) {
-            targetWordIndex = currentWordIndex + 1;
-          } else if (currentWordIndex === -1) { // If no word is active, find the closest next one
-             const potentialIndex = wordTimings.findIndex(t => t.start >= currentTime);
-             targetWordIndex = potentialIndex !== -1 ? potentialIndex : wordTimings.length -1;
-          } else {
-             targetWordIndex = wordTimings.length - 1; // Go to the last word if already at the last
-          }
+          // Go to the next index, but not beyond the last word
+          targetWordIndex = Math.min(wordTimings.length - 1, currentWordIndex + 1);
         }
+        // --- Revised Word Index Logic --- END
 
-        if (targetWordIndex !== -1) {
+        console.log(`Arrow Key: targetIndex=${targetWordIndex}`); // DEBUG LOG
+
+        if (targetWordIndex !== -1 && targetWordIndex < wordTimings.length) {
           const targetTime = wordTimings[targetWordIndex].start;
-          playerRef.current.seekTo(targetTime);
-          setCurrentTime(targetTime); // Update current time immediately for responsiveness
+          console.log(`Arrow Key: Seeking to time=${targetTime.toFixed(2)} for word '${wordTimings[targetWordIndex].word}'`); // DEBUG LOG
+          playerRef.current.seekTo(targetTime, 'seconds');
           if (!isPlaying) setIsPlaying(true); // Optionally start playing on seek
         }
       }
@@ -101,7 +108,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
   // Handle word click
   const handleWordClick = (timing: WordTiming) => {
     if (playerRef.current) {
-      playerRef.current.seekTo(timing.start);
+      playerRef.current.seekTo(timing.start, 'seconds');
+      setCurrentTime(timing.start); // Update time immediately for click responsiveness
       setIsPlaying(true);
     }
   };
