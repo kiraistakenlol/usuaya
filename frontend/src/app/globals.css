@@ -24,3 +24,45 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.audio-player {
+  @apply bg-white rounded-lg shadow-md p-4;
+}
+
+.audio-player .player-controls {
+  @apply mb-4;
+}
+
+.audio-player .time-display {
+  @apply text-sm text-gray-600 mt-2 text-center;
+}
+
+.audio-player .text-content {
+  @apply text-gray-800 leading-relaxed;
+}
+
+.audio-player .text-content span {
+  @apply inline-block;
+}
+
+.audio-player .text-content span:hover {
+  @apply bg-gray-100;
+}
+
+/* Custom styles for react-player */
+.react-player {
+  @apply rounded-lg overflow-hidden;
+}
+
+.react-player video {
+  @apply rounded-lg;
+}
+
+/* Progress bar styles */
+.react-player .progress-bar {
+  @apply h-1 bg-gray-200 rounded-full;
+}
+
+.react-player .progress-bar .progress {
+  @apply h-full bg-blue-500 rounded-full;
+}

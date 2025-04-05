@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
+import { AudioPlayer } from '@/components/AudioPlayer';
 
 interface Text {
   id: string;
@@ -119,30 +120,13 @@ export default function TextDetailPage() {
              </div>
              
              {/* Audio Player */}
-             {text.audio?.id ? (
-                <div className="mb-6">
-                    <h3 className="text-base font-semibold text-gray-700 mb-2">Audio:</h3>
-                    <audio 
-                      controls 
-                      className="w-full"
-                      onError={handleAudioError}
-                    >
-                        <source 
-                          src={`${API_URL}/texts/${text.id}/audio`} 
-                          type="audio/mpeg" 
-                        />
-                        Your browser does not support the audio element.
-                    </audio>
-                    {audioError && (
-                      <p className="text-red-500 mt-2">{audioError}</p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">
-                      Audio ID: {text.audio.id}
-                    </p>
-                </div>
-             ) : (
-                <div className="mb-6">
-                    <p className="text-gray-500">No audio available for this text.</p>
+             {text.audio && (
+                <div className="mt-4">
+                    <AudioPlayer
+                      audioUrl={`${API_URL}/texts/${text.id}/audio`}
+                      wordTimings={text.audio.word_timings}
+                      text={text.spanish_text}
+                    />
                 </div>
              )}
 
