@@ -54,32 +54,30 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
 
   // Split text into words and render with highlighting
   const renderText = () => {
-    const words = text.split(/\s+/);
-    return words.map((word, index) => {
-      const timing = wordTimings.find(t => t.word.trim() === word);
-      const isCurrentWord = timing && 
-        currentTime >= timing.start && 
-        currentTime <= timing.end;
+    return wordTimings.map((timing, index) => {
+      const isCurrentWord = currentTime >= timing.start && currentTime <= timing.end;
 
       return (
         <span
           key={index}
-          onClick={() => timing && handleWordClick(timing)}
+          onClick={() => handleWordClick(timing)}
           style={{
-            cursor: timing ? 'pointer' : 'default',
-            backgroundColor: isCurrentWord ? '#3b82f6' : 'transparent',
+            cursor: 'pointer',
             color: isCurrentWord ? 'white' : '#1a1a1a',
-            padding: '2px 4px',
-            borderRadius: '4px',
-            transition: 'all 0.2s ease',
+            transition: 'color 0.2s ease',
             fontSize: '16px',
             lineHeight: '1.6',
             fontWeight: isCurrentWord ? 'bold' : 'normal',
-            boxShadow: isCurrentWord ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-            transform: isCurrentWord ? 'scale(1.05)' : 'scale(1)',
+            position: 'relative',
+            display: 'inline-block',
+            padding: '0 2px',
+            backgroundColor: isCurrentWord ? '#3b82f6' : 'transparent',
+            borderRadius: '4px',
+            minWidth: '1em',
+            textAlign: 'center',
           }}
         >
-          {word}{' '}
+          {timing.word}{' '}
         </span>
       );
     });

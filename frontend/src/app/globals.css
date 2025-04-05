@@ -66,3 +66,21 @@ body {
 .react-player .progress-bar .progress {
   @apply h-full bg-blue-500 rounded-full;
 }
+
+.highlighted-word {
+  position: relative;
+  z-index: 1;
+}
+
+.highlighted-word::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #3b82f6;
+  z-index: -1;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
