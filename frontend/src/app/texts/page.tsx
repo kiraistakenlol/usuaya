@@ -198,25 +198,45 @@ Hola
             <ul className="divide-y divide-gray-200">
                 {texts.map((text) => (
                     <li key={text.id} className="py-4">
-                        <Link href={`/texts/${text.id}`} className="block hover:bg-gray-50 p-4 rounded transition duration-150">
+                        <Link href={`/texts/${text.id}`} className="block hover:bg-gray-50 p-4 rounded transition duration-150 border border-gray-200 shadow-sm hover:shadow-md">
                            <div className="flex flex-col gap-2">
                              <div className="flex justify-between items-center">
-                               <p className="text-sm text-gray-400">
-                                 {new Date(text.created_at).toLocaleString()}
-                               </p>
-                               {text.audio_file_id && (
-                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                   Has Audio
-                                 </span>
-                               )}
-                             </div>
-                             <div className="space-y-2">
-                               <p className="text-base font-medium text-gray-900">
-                                 {text.spanish_text}
-                               </p>
-                               <p className="text-sm text-gray-600">
-                                 {text.english_translation || '(No translation available)'}
-                               </p>
+                               <h3 className="text-lg font-medium text-gray-900">
+                                 {text.spanish_text.length > 50 
+                                   ? `${text.spanish_text.substring(0, 50)}...` 
+                                   : text.spanish_text}
+                               </h3>
+                               <div className="flex items-center gap-2">
+                                 <p className="text-sm text-gray-500">
+                                   {(() => {
+                                     try {
+                                       // Check if created_at exists
+                                       if (!text.created_at) {
+                                         return 'Date unavailable';
+                                       }
+                                       
+                                       // Parse the UTC timestamp from the backend
+                                       const date = new Date(text.created_at);
+                                       
+                                       // Format the date in local timezone
+                                       return date.toLocaleString(undefined, {
+                                         year: 'numeric',
+                                         month: 'numeric',
+                                         day: 'numeric',
+                                         hour: '2-digit',
+                                         minute: '2-digit',
+                                         hour12: true
+                                       });
+                                     } catch (error) {
+                                       console.error('Error parsing date:', error);
+                                       return 'Date unavailable';
+                                     }
+                                   })()}
+                                 </p>
+                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                 </svg>
+                               </div>
                              </div>
                            </div>
                         </Link>

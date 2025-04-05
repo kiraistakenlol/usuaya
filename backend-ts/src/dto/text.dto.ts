@@ -49,13 +49,21 @@ export class TextResponseDto {
   @Expose()
   audio_file_id: string | null;
 
-  @IsDate()
+  @IsString()
   @Expose()
-  @Transform(({ value }) => value ? new Date(value) : null)
-  created_at: Date;
+  @Transform(({ value }) => {
+    if (!value) return null;
+    // Convert the Date object to an ISO string to preserve UTC
+    return value instanceof Date ? value.toISOString() : value;
+  })
+  created_at: string;
 
-  @IsDate()
+  @IsString()
   @Expose()
-  @Transform(({ value }) => value ? new Date(value) : null)
-  updated_at: Date;
+  @Transform(({ value }) => {
+    if (!value) return null;
+    // Convert the Date object to an ISO string to preserve UTC
+    return value instanceof Date ? value.toISOString() : value;
+  })
+  updated_at: string;
 } 

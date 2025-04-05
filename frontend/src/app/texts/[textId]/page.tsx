@@ -82,7 +82,30 @@ export default function TextDetailPage() {
                  Text Details
                </h2>
                <p className="text-sm text-gray-500">
-                 Created: {new Date(text.created_at).toLocaleString()}
+                 Created: {(() => {
+                   try {
+                     // Check if created_at exists
+                     if (!text.created_at) {
+                       return 'Date unavailable';
+                     }
+                     
+                     // Parse the UTC timestamp from the backend
+                     const date = new Date(text.created_at);
+                     
+                     // Format the date in local timezone
+                     return date.toLocaleString(undefined, {
+                       year: 'numeric',
+                       month: 'numeric',
+                       day: 'numeric',
+                       hour: '2-digit',
+                       minute: '2-digit',
+                       hour12: true
+                     });
+                   } catch (error) {
+                     console.error('Error parsing date:', error);
+                     return 'Date unavailable';
+                   }
+                 })()}
                </p>
              </div>
              
