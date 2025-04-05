@@ -88,6 +88,22 @@ export class TextService {
       const text = await this.textRepository.findOne({
         where: { id },
         relations: ['audio'],
+        select: {
+          id: true,
+          spanish_text: true,
+          english_translation: true,
+          vocabulary_usage: true,
+          audio_id: true,
+          created_at: true,
+          updated_at: true,
+          audio: {
+            id: true,
+            file_id: true,
+            word_timings: true,
+            created_at: true,
+            updated_at: true
+          }
+        }
       });
       
       if (!text) {
@@ -97,6 +113,8 @@ export class TextService {
       // Ensure audio is properly loaded
       if (text.audio) {
         this.logger.log(`Audio found for text with ID: ${id}, audio ID: ${text.audio.id}`);
+      } else if (text.audio_id) {
+        this.logger.log(`Audio ID exists but audio not loaded for text with ID: ${id}, audio ID: ${text.audio_id}`);
       } else {
         this.logger.log(`No audio found for text with ID: ${id}`);
       }

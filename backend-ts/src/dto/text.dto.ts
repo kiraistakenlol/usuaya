@@ -52,9 +52,16 @@ export class TextResponseDto {
     if (value && value.id) {
       return value;
     }
-    // If we have an audio_id but no audio object, return null
+    // If we have an audio_id, try to load the audio
     if (obj.audio_id) {
-      return null;
+      return {
+        id: obj.audio_id,
+        file_id: obj.audio?.file_id || null,
+        word_timings: obj.audio?.word_timings || null,
+        text_id: obj.id,
+        created_at: obj.audio?.created_at || null,
+        updated_at: obj.audio?.updated_at || null
+      };
     }
     return null;
   })
