@@ -5,10 +5,11 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 
 interface Text {
-  id: number;
-  spanish_content: string;
+  id: string; // Changed from number to string (UUID)
+  spanish_text: string; // Changed from spanish_content to spanish_text
   english_translation: string | null;
-  audio_file_id: string | null; // Correct type: string or null
+  audio_file_id: string | null;
+  created_at: string;
 }
 
 const API_URL = 'http://localhost:8000';
@@ -20,6 +21,7 @@ export default function TextDetailPage() {
   const [text, setText] = useState<Text | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!textId) return; // Don't fetch if ID is not available yet
@@ -37,6 +39,7 @@ export default function TextDetailPage() {
           }
         }
         const data: Text = await response.json();
+        console.log('Fetched text data:', data);
         setText(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -48,6 +51,11 @@ export default function TextDetailPage() {
 
     fetchText();
   }, [textId]); // Refetch if textId changes
+
+  const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+    console.error('Audio error:', e);
+    setAudioError('Failed to load audio file');
+  };
 
   return (
     <>
@@ -69,18 +77,40 @@ export default function TextDetailPage() {
       {text && !loading && !error && (
         <div className="bg-white shadow rounded-md overflow-hidden">
           <div className="px-4 py-5 sm:p-6">
-             <h2 className="text-lg font-medium text-gray-900 mb-4">
-               Text #{text.id}
-             </h2>
+             <div className="flex justify-between items-start mb-4">
+               <h2 className="text-lg font-medium text-gray-900">
+                 Text Details
+               </h2>
+               <p className="text-sm text-gray-500">
+                 Created: {new Date(text.created_at).toLocaleString()}
+               </p>
+             </div>
              
              {/* Audio Player */} 
-             {text.audio_file_id && (
+             {text.audio_file_id ? (
                 <div className="mb-6">
                     <h3 className="text-base font-semibold text-gray-700 mb-2">Audio:</h3>
-                    <audio controls className="w-full">
-                        <source src={`${API_URL}/audio/${text.audio_file_id}`} type="audio/mpeg" /> {/* Assuming MP3 for now */} 
+                    <audio 
+                      controls 
+                      className="w-full"
+                      onError={handleAudioError}
+                    >
+                        <source 
+                          src={`${API_URL}/audio/${text.audio_file_id}`} 
+                          type="audio/mpeg" 
+                        />
                         Your browser does not support the audio element.
                     </audio>
+                    {audioError && (
+                      <p className="text-red-500 mt-2">{audioError}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Audio ID: {text.audio_file_id}
+                    </p>
+                </div>
+             ) : (
+                <div className="mb-6">
+                    <p className="text-gray-500">No audio available for this text.</p>
                 </div>
              )}
 
@@ -88,7 +118,7 @@ export default function TextDetailPage() {
                 <h3 className="text-base font-semibold text-gray-700 mb-2">Spanish Content:</h3>
                 {/* Preserve whitespace and newlines from the stored text */}
                 <p className="text-gray-800 whitespace-pre-wrap">
-                   {text.spanish_content}
+                   {text.spanish_text}
                 </p>
              </div>
 

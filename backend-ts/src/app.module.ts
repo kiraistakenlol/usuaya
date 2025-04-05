@@ -2,10 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Text } from './entities/text.entity';
+import { Phrase } from './entities/phrase.entity';
 import { TextController } from './controllers/text.controller';
+import { PhraseController } from './controllers/phrase.controller';
+import { AudioController } from './controllers/audio.controller';
 import { TextService } from './services/text.service';
+import { PhraseService } from './services/phrase.service';
 import { TextGeneratorService } from './services/text-generator.service';
 import { AudioGeneratorService } from './services/audio-generator.service';
+import { AudioStorageService } from './services/audio-storage.service';
 import { join } from 'path';
 
 @Module({
@@ -23,14 +28,14 @@ import { join } from 'path';
         username: configService.get('DB_USERNAME', 'user'),
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_DATABASE', 'vibe_dev'),
-        entities: [Text],
+        entities: [Text, Phrase],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Text]),
+    TypeOrmModule.forFeature([Text, Phrase]),
   ],
-  controllers: [TextController],
-  providers: [TextService, TextGeneratorService, AudioGeneratorService],
+  controllers: [TextController, PhraseController, AudioController],
+  providers: [TextService, PhraseService, TextGeneratorService, AudioGeneratorService, AudioStorageService],
 })
 export class AppModule {}

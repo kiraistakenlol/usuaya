@@ -1,4 +1,5 @@
-import { IsString, IsArray, IsOptional } from 'class-validator';
+import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
 
 export class CreateTextDto {
   @IsArray()
@@ -22,4 +23,39 @@ export class UpdateTextDto {
   @IsString()
   @IsOptional()
   audio_file_id?: string;
+}
+
+export class TextResponseDto {
+  @IsUUID()
+  @Expose()
+  id: string;
+
+  @IsString()
+  @Expose()
+  spanish_text: string;
+
+  @IsString()
+  @IsOptional()
+  @Expose()
+  english_translation: string | null;
+
+  @IsString()
+  @IsOptional()
+  @Expose()
+  vocabulary_usage: string | null;
+
+  @IsString()
+  @IsOptional()
+  @Expose()
+  audio_file_id: string | null;
+
+  @IsDate()
+  @Expose()
+  @Transform(({ value }) => value ? new Date(value) : null)
+  created_at: Date;
+
+  @IsDate()
+  @Expose()
+  @Transform(({ value }) => value ? new Date(value) : null)
+  updated_at: Date;
 } 

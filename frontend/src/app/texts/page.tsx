@@ -10,9 +10,11 @@ interface Phrase {
 }
 
 interface Text {
-  id: number;
-  spanish_content: string;
+  id: string;
+  spanish_text: string;
   english_translation: string | null;
+  audio_file_id: string | null;
+  created_at: string;
 }
 
 const API_URL = 'http://localhost:8000';
@@ -196,13 +198,27 @@ Hola
             <ul className="divide-y divide-gray-200">
                 {texts.map((text) => (
                     <li key={text.id} className="py-4">
-                        <Link href={`/texts/${text.id}`} className="block hover:bg-gray-50 p-2 rounded">
-                           <p className="text-sm font-medium text-indigo-600 truncate mb-1">
-                              Text #{text.id} {/* Simple title for now */}
-                           </p>
-                           <p className="text-sm text-gray-700 line-clamp-2">
-                              {text.spanish_content}
-                           </p>
+                        <Link href={`/texts/${text.id}`} className="block hover:bg-gray-50 p-4 rounded transition duration-150">
+                           <div className="flex flex-col gap-2">
+                             <div className="flex justify-between items-center">
+                               <p className="text-sm text-gray-400">
+                                 {new Date(text.created_at).toLocaleString()}
+                               </p>
+                               {text.audio_file_id && (
+                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                   Has Audio
+                                 </span>
+                               )}
+                             </div>
+                             <div className="space-y-2">
+                               <p className="text-base font-medium text-gray-900">
+                                 {text.spanish_text}
+                               </p>
+                               <p className="text-sm text-gray-600">
+                                 {text.english_translation || '(No translation available)'}
+                               </p>
+                             </div>
+                           </div>
                         </Link>
                     </li>
                 ))}

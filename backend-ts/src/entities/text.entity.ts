@@ -6,10 +6,10 @@ export class Text {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   spanish_text: string;
 
-  @Column()
+  @Column({ nullable: true })
   english_translation: string;
 
   @Column({ nullable: true })

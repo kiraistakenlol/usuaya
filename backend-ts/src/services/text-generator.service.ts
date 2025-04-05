@@ -38,9 +38,12 @@ Format the output strictly as follows:
     vocabularyUsage: string;
   }> {
     try {
+      console.log('TextGeneratorService: Starting text generation with vocabulary:', vocabulary);
+      
       const vocabStr = vocabulary.map(word => `- ${word}`).join('\n');
       const userPrompt = `Please generate a text using these vocabulary words/phrases:\n\n${vocabStr}\n\nRemember to use Argentinian Spanish with 'vos' conjugation and local expressions where appropriate.`;
-
+      
+      console.log('TextGeneratorService: Sending request to Claude API...');
       const message = await this.client.messages.create({
         model: 'claude-3-opus-20240229',
         max_tokens: 1000,
@@ -48,8 +51,11 @@ Format the output strictly as follows:
         system: this.SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
       });
+      console.log('TextGeneratorService: Received response from Claude API');
 
       const response = message.content[0].type === 'text' ? message.content[0].text : '';
+      console.log('TextGeneratorService: Raw response:', response);
+      
       let spanishText = '';
       let englishTranslation = '';
       let vocabularyUsage = '';
@@ -76,13 +82,19 @@ Format the output strictly as follows:
         }
       }
 
+      console.log('TextGeneratorService: Parsed sections:', {
+        spanishText: spanishText.trim(),
+        englishTranslation: englishTranslation.trim(),
+        vocabularyUsage: vocabularyUsage.trim(),
+      });
+
       return {
         spanishText: spanishText.trim(),
         englishTranslation: englishTranslation.trim(),
         vocabularyUsage: vocabularyUsage.trim(),
       };
     } catch (error) {
-      console.error('Error generating text:', error);
+      console.error('TextGeneratorService: Error generating text:', error);
       throw error;
     }
   }
