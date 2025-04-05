@@ -38,9 +38,11 @@ This project aims to streamline a personalized Spanish learning workflow by auto
 
 ## Usage
 
-The current version provides a basic web interface to:
-*   View a list of Spanish phrases.
-*   Add new phrases.
-*   Delete existing phrases.
+The current version provides a web interface to:
+*   View a list of Spanish texts with their English translations
+*   Generate new texts based on vocabulary lists
+*   View creation dates for all texts
+*   Access audio recordings for texts (when available)
+*   Manage vocabulary lists for text generation
 
 Data is stored persistently in the PostgreSQL database managed by Docker Compose. 

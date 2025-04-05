@@ -8,25 +8,31 @@ Create an application to streamline a personalized Spanish learning workflow. Th
 
 ## Current State
 
-Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`) and git repository. No application code exists yet.
+The project has a functional web application with:
+- Backend API built with TypeScript, FastAPI, and TypeORM
+- Frontend built with Next.js and Tailwind CSS
+- PostgreSQL database for data storage
+- Text generation and audio synthesis capabilities
+- Vocabulary management system
+- Text creation and viewing interface
 
 ## Roadmap / Next Steps
 
 (Use Markdown checklists for planned tasks or features)
 
 **Core Workflow Automation (Problem A):**
-- [ ] Integrate with an AI model (like GPT) for text generation based on vocabulary lists and regional preferences (Argentinian Spanish).
-- [ ] Integrate with a Text-to-Speech (TTS) service to generate audio for Spanish text.
-- [ ] Integrate with an AI model or translation service for English translation.
-- [ ] Develop a mechanism to store/manage generated content sets (Spanish text, English translation, audio file). (Initially, maybe simple file storage, later potentially a database).
+- [X] Integrate with an AI model (like GPT) for text generation based on vocabulary lists and regional preferences (Argentinian Spanish).
+- [X] Integrate with a Text-to-Speech (TTS) service to generate audio for Spanish text.
+- [X] Integrate with an AI model or translation service for English translation.
+- [X] Develop a mechanism to store/manage generated content sets (Spanish text, English translation, audio file).
 - [ ] Optional: Explore Telegram Bot integration for delivering content (or build a dedicated UI).
 
 **Enhanced Playback (Problem B):**
-- [ ] Develop a UI that displays Spanish text alongside its translation.
+- [X] Develop a UI that displays Spanish text alongside its translation.
 - [ ] Implement synchronized playback: clicking a sentence/word in the Spanish text plays the corresponding audio segment.
 
 **Spaced Repetition & Vocabulary Management (Problem C):**
-- [ ] Create a system to store and track user's known/unknown vocabulary.
+- [X] Create a system to store and track user's known/unknown vocabulary.
 - [ ] Implement logic to incorporate previously learned/unknown words into newly generated texts with adjustable frequency (Spaced Repetition System - SRS).
 - [ ] Optional: Rank vocabulary by real-world usage frequency.
 
@@ -41,13 +47,13 @@ Project initialized with basic file structure (`README.md`, `PROJECT_STATUS.md`)
 
 (Record important architectural choices, coding style guides, etc.)
 - **Technology Stack:**
-    - **Backend:** Python with FastAPI
+    - **Backend:** TypeScript with FastAPI and TypeORM
     - **Frontend:** Next.js (React) with Tailwind CSS
     - **Development Environment:** Local setup for both frontend and backend.
     - **Primary Dev OS:** macOS
-    - **Primary Python Version:** Python 3 (specific version TBD, managed via venv)
+    - **Primary Node Version:** Node.js >= 18
 - **Data Storage (Local Development):**
-    - **Database:** PostgreSQL (requires local installation and server running).
+    - **Database:** PostgreSQL (managed via Docker Compose).
     - **Media Files (Audio):** Stored directly on the filesystem (e.g., in `data/audio/`).
 
 ## README Update Rules
