@@ -1,5 +1,6 @@
 import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
 import { Expose, Transform } from 'class-transformer';
+import { AudioResponseDto } from './audio.dto';
 
 export class CreateTextDto {
   @IsArray()
@@ -44,10 +45,20 @@ export class TextResponseDto {
   @Expose()
   vocabulary_usage: string | null;
 
-  @IsString()
   @IsOptional()
   @Expose()
-  audio_file_id: string | null;
+  @Transform(({ value, obj }) => {
+    // If we have an audio object, return it
+    if (value) {
+      return value;
+    }
+    // If we have an audio_id but no audio object, return null
+    if (obj.audio_id) {
+      return null;
+    }
+    return null;
+  })
+  audio: AudioResponseDto | null;
 
   @IsString()
   @Expose()
