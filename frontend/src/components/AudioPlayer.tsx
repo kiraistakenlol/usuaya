@@ -174,9 +174,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
           controls={true}
           progressInterval={100}
         />
-        <div className="time-display">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </div>
       </div>
       <div className="text-content" style={{ 
         marginTop: '20px',
