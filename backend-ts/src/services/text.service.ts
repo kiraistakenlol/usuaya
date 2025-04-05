@@ -4,8 +4,10 @@ import { Repository } from 'typeorm';
 import { Text } from '../entities/text.entity';
 import { TextGeneratorService } from './text-generator.service';
 import { AudioGeneratorService } from './audio-generator.service';
+import { AudioService } from './audio.service';
 import { CreateTextDto } from '../dto/text.dto';
 import { isUUID } from 'class-validator';
+import { Audio } from '../entities/audio.entity';
 
 @Injectable()
 export class TextService {
@@ -13,9 +15,10 @@ export class TextService {
 
   constructor(
     @InjectRepository(Text)
-    private textRepository: Repository<Text>,
-    private textGeneratorService: TextGeneratorService,
-    private audioGeneratorService: AudioGeneratorService,
+    private readonly textRepository: Repository<Text>,
+    private readonly textGeneratorService: TextGeneratorService,
+    private readonly audioGeneratorService: AudioGeneratorService,
+    private readonly audioService: AudioService,
   ) {}
 
   async create(createTextDto: CreateTextDto): Promise<Text> {
@@ -24,26 +27,32 @@ export class TextService {
     const { spanishText, englishTranslation, vocabularyUsage } = await this.textGeneratorService.generateText(createTextDto.vocabulary);
     this.logger.log(`Generated text: ${spanishText.substring(0, 50)}...`);
     
-    this.logger.log('Starting audio generation for Spanish text');
-    const audioId = await this.audioGeneratorService.generateAudio(spanishText);
-    this.logger.log(`Audio generation result: ${audioId ? 'Success' : 'Failed'}`);
-    this.logger.log(`Audio file ID created: ${audioId || 'No'}`);
-    
+    // Create the text entity first
     const text = this.textRepository.create({
       spanish_text: spanishText,
       english_translation: englishTranslation,
       vocabulary_usage: vocabularyUsage,
-      audio_file_id: audioId || undefined,
     });
     
     const savedText = await this.textRepository.save(text);
     this.logger.log(`Text saved with ID: ${savedText.id}`);
     
-    // Log the created_at date in different formats
-    this.logger.log(`Raw created_at from database: ${savedText.created_at}`);
-    this.logger.log(`created_at as ISO string: ${savedText.created_at.toISOString()}`);
-    this.logger.log(`created_at as UTC string: ${savedText.created_at.toUTCString()}`);
-    this.logger.log(`created_at as local string: ${savedText.created_at.toString()}`);
+    // Generate audio for the text
+    let audio: Audio | undefined;
+    try {
+      this.logger.log('Starting audio generation for Spanish text');
+      audio = await this.audioService.generateAudio(spanishText, savedText.id);
+      this.logger.log(`Audio generated with ID: ${audio.id}`);
+      
+      // Update the text with audio reference
+      savedText.audio = audio;
+      savedText.audio_id = audio.id;
+      await this.textRepository.save(savedText);
+      this.logger.log(`Text updated with audio reference`);
+    } catch (error) {
+      this.logger.error(`Error generating audio: ${error.message}`);
+      // Continue without audio if generation fails
+    }
     
     return savedText;
   }
@@ -51,17 +60,20 @@ export class TextService {
   async findAll(): Promise<Text[]> {
     this.logger.log('Finding all texts');
     const texts = await this.textRepository.find({
+      relations: ['audio'],
       order: {
         created_at: 'DESC'
       }
     });
     
-    // Log the first text's date if available
-    if (texts.length > 0) {
-      this.logger.log(`First text ID: ${texts[0].id}`);
-      this.logger.log(`First text raw created_at: ${texts[0].created_at}`);
-      this.logger.log(`First text created_at as ISO string: ${texts[0].created_at.toISOString()}`);
-    }
+    // Log audio information for each text
+    texts.forEach(text => {
+      if (text.audio) {
+        this.logger.log(`Text ID: ${text.id}, Audio ID: ${text.audio.id}`);
+      } else {
+        this.logger.log(`Text ID: ${text.id}, No audio`);
+      }
+    });
     
     return texts;
   }
@@ -73,17 +85,21 @@ export class TextService {
 
     try {
       this.logger.log(`Finding text with ID: ${id}`);
-      const text = await this.textRepository.findOneBy({ id });
+      const text = await this.textRepository.findOne({
+        where: { id },
+        relations: ['audio'],
+      });
+      
       if (!text) {
         throw new NotFoundException(`Text with ID ${id} not found`);
       }
       
-      // Log the date in different formats
-      this.logger.log(`Text found with ID: ${id}`);
-      this.logger.log(`Raw created_at from database: ${text.created_at}`);
-      this.logger.log(`created_at as ISO string: ${text.created_at.toISOString()}`);
-      this.logger.log(`created_at as UTC string: ${text.created_at.toUTCString()}`);
-      this.logger.log(`created_at as local string: ${text.created_at.toString()}`);
+      // Ensure audio is properly loaded
+      if (text.audio) {
+        this.logger.log(`Audio found for text with ID: ${id}, audio ID: ${text.audio.id}`);
+      } else {
+        this.logger.log(`No audio found for text with ID: ${id}`);
+      }
       
       return text;
     } catch (error) {
@@ -96,9 +112,15 @@ export class TextService {
 
   async getAudioFile(id: string): Promise<Buffer | null> {
     const text = await this.findOne(id);
-    if (!text.audio_file_id) {
+    if (!text.audio) {
       return null;
     }
-    return this.audioGeneratorService.getAudioById(text.audio_file_id);
+    
+    try {
+      return await this.audioService.getAudioFileById(text.audio.id);
+    } catch (error) {
+      this.logger.error(`Error getting audio file: ${error.message}`);
+      return null;
+    }
   }
 } 
