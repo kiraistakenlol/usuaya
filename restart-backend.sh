@@ -37,21 +37,15 @@ fi
 # --- Start new backend process ---
 echo "Starting new backend process (logging to terminal)..."
 (
-  cd backend || exit 1
-  # Ensure venv exists and activate it
-  if [ ! -d "venv" ]; then
-      echo "Creating backend virtual environment..." >&2
-      python3 -m venv venv || { echo "Failed to create venv"; exit 1; }
+  cd backend-ts || exit 1
+  # Check if node_modules exists, if not install dependencies
+  if [ ! -d "node_modules" ]; then
+      echo "Node modules not found. Installing dependencies..."
+      npm install
   fi
-  source venv/bin/activate || { echo "Failed to activate venv"; exit 1; }
   
-  # Ensure dependencies are installed (optional, but can be helpful)
-  # echo "Installing/updating backend dependencies..."
-  # pip install -r requirements.txt
-
-  # Start Uvicorn in background, log to terminal, save PID
-  # NOTE: Logs will mix with script output when run this way.
-  python -m uvicorn main:app --reload --port $BACKEND_PORT &
+  # Start NestJS in background, log to terminal, save PID
+  npm run start:dev &
   NEW_PID=$!
   echo $NEW_PID > "../$BACKEND_PID_FILE"
 ) 
