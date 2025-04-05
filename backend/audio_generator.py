@@ -2,11 +2,19 @@ import os
 from elevenlabs.client import ElevenLabs
 from elevenlabs import save
 import io
+from dotenv import load_dotenv
 
-# --- Configuration --- 
-# WARNING: Avoid committing real keys to Git in production projects.
-ELEVENLABS_API_KEY = "sk_83246b1441f4e29c788d7949990c6269368f199d39486973"
-VOICE_ID = "ukupJ4zdf9bo1Py6MiO6"
+# Load environment variables from .env file
+load_dotenv()
+
+# Configuration
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID")
+
+if not ELEVENLABS_API_KEY:
+    raise ValueError("ELEVENLABS_API_KEY environment variable is not set")
+if not ELEVENLABS_VOICE_ID:
+    raise ValueError("ELEVENLABS_VOICE_ID environment variable is not set")
 
 # Initialize client (can be done once)
 try:
@@ -37,7 +45,7 @@ def generate_audio_elevenlabs(text: str) -> io.BytesIO | None:
         # Generate audio stream
         audio_stream = client.generate(
             text=text,
-            voice=VOICE_ID,
+            voice=ELEVENLABS_VOICE_ID,
             model="eleven_multilingual_v2" # Or another suitable model
         )
 

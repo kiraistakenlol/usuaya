@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 
 # Use direct import since main.py is run as a script
-from text_generator import generate_text_with_claude 
+from text_generator import generate_text_and_audio
 from media_storage import save_media_file, get_media_file_path
 from audio_generator import generate_audio_elevenlabs # Import audio generator
 
@@ -118,7 +118,7 @@ def create_text_and_audio(
 
     # 1. Generate Text using Claude
     print(f"Generating text for vocabulary: {request.vocabulary}")
-    generated_spanish, generated_english = generate_text_with_claude(request.vocabulary)
+    generated_spanish, generated_english = generate_text_and_audio(request.vocabulary)
     print(f"Spanish: {generated_spanish[:100]}... English: {generated_english[:100]}...")
 
     if generated_spanish.startswith("Error generating text"):

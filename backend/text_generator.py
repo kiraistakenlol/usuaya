@@ -1,6 +1,10 @@
 import anthropic
 import os
 from typing import List, Tuple
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Get API key from environment variable
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
