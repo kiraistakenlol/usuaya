@@ -1,5 +1,5 @@
 import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
-import { Expose, Transform } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { AudioResponseDto } from './audio.dto';
 
 export class CreateTextDto {

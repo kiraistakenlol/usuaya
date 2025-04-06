@@ -17,10 +17,19 @@ export class TextController {
     const result = await this.textService.create(createTextDto);
     
     // Transform the result to TextResponseDto
-    return plainToClass(TextResponseDto, result, { 
+    const dto = plainToClass(TextResponseDto, result, { 
       excludeExtraneousValues: true,
       enableImplicitConversion: true
     });
+
+    // --- Manually Re-assign analysis_data --- START
+    if (result.analysis_data) { 
+      dto.analysis_data = result.analysis_data;
+    }
+    // --- Manually Re-assign analysis_data --- END
+
+    // Consider logging DTO before returning if needed
+    return dto;
   }
 
   @Get()
@@ -29,10 +38,20 @@ export class TextController {
     const texts = await this.textService.findAll();
     
     // Transform the results to TextResponseDto
-    return texts.map(text => plainToClass(TextResponseDto, text, { 
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true
-    }));
+    return texts.map(text => {
+      const dto = plainToClass(TextResponseDto, text, { 
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true
+      });
+      
+      // --- Manually Re-assign analysis_data --- START
+      if (text.analysis_data) { 
+        dto.analysis_data = text.analysis_data;
+      }
+      // --- Manually Re-assign analysis_data --- END
+      
+      return dto;
+    });
   }
 
   @Get(':id')
@@ -41,14 +60,32 @@ export class TextController {
       throw new BadRequestException('Invalid ID format. Must be a UUID.');
     }
     
-    this.logger.log(`Finding text with ID: ${id}`);
+    this.logger.log(`Controller: Finding text with ID: ${id}`);
     const text = await this.textService.findOne(id);
     
+    // --- Log Raw Entity in Controller --- START
+    console.log('Controller received entity from service:', JSON.stringify(text, null, 2));
+    // --- Log Raw Entity in Controller --- END
+    
     // Transform the result to TextResponseDto
-    return plainToClass(TextResponseDto, text, { 
+    const dto = plainToClass(TextResponseDto, text, { 
       excludeExtraneousValues: true,
       enableImplicitConversion: true
     });
+
+    // --- Manually Re-assign analysis_data --- START
+    // plainToClass strips nested objects typed as 'any' when excludeExtraneousValues is true.
+    // We assign it manually from the original entity after transformation.
+    if (text.analysis_data) { 
+      dto.analysis_data = text.analysis_data;
+    }
+    // --- Manually Re-assign analysis_data --- END
+
+    // --- Log Transformed DTO in Controller --- START
+    console.log('Controller transformed DTO before sending:', JSON.stringify(dto, null, 2));
+    // --- Log Transformed DTO in Controller --- END
+
+    return dto;
   }
 
   @Get(':id/audio')
