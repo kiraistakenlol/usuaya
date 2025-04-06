@@ -1,6 +1,7 @@
 import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
 import { Expose, Transform, Type } from 'class-transformer';
 import { AudioResponseDto } from './audio.dto';
+import { AnalysisData } from '../types/analysis-data.types';
 
 export class CreateTextDto {
   @IsArray()
@@ -38,7 +39,7 @@ export class TextResponseDto {
 
   @IsOptional()
   @Expose()
-  analysis_data: any;
+  analysis_data: AnalysisData | null;
 
   @IsOptional()
   @Expose()

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne, JoinColumn } from 'typeorm';
 import { Phrase } from './phrase.entity';
 import { Audio } from './audio.entity';
+import { AnalysisData } from '../types/analysis-data.types';
 
 @Entity('text')
 export class Text {
@@ -14,7 +15,7 @@ export class Text {
   english_translation: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  analysis_data: any;
+  analysis_data: AnalysisData | null;
 
   @OneToOne(() => Audio, audio => audio.text)
   @JoinColumn({ name: 'audio_id' })

@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
+// Import central types (adjust path as needed)
+// import { AnalysisData, AnalysisToken, AnalysisAnnotation, WordTiming } from '@/types'; // Assuming a central @/types file
 
+// --- Re-add Local Definitions for Now --- START
 interface WordTiming {
   word: string;
   start: number;
   end: number;
   confidence: number;
 }
-
-// --- Interfaces for Analysis Data --- START
 interface AnalysisToken {
   text: string;
   index: number;
@@ -18,7 +19,6 @@ interface AnalysisToken {
   russian: string | null;
   annotation_ids: string[];
 }
-
 interface AnalysisAnnotation {
   type: string;
   scope_indices: number[];
@@ -27,21 +27,21 @@ interface AnalysisAnnotation {
   explanation_english: string;
   explanation_russian: string;
 }
-
 interface AnalysisData {
-  generated_text?: {
-    tokens?: AnalysisToken[];
-    annotations?: Record<string, AnalysisAnnotation>;
+  generated_text: {
+    spanish_plain: string;
+    tokens: AnalysisToken[];
+    annotations: Record<string, AnalysisAnnotation>;
   };
-  // Add other top-level fields if needed
+  english_translation_plain: string;
 }
-// --- Interfaces for Analysis Data --- END
+// --- Re-add Local Definitions for Now --- END
 
 interface AudioPlayerProps {
   audioUrl: string;
   wordTimings: WordTiming[];
   text: string;
-  analysisData: AnalysisData | null; // Added analysisData prop
+  analysisData: AnalysisData | null; 
 }
 
 // --- Popup Component --- START (Simple placeholder for now)

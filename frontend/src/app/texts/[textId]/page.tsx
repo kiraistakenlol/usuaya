@@ -5,10 +5,16 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 import { AudioPlayer } from '@/components/AudioPlayer';
 
-// Import the AnalysisData interface if it's defined elsewhere, or define locally
-// Assuming it might be in @/components/AudioPlayer.tsx for now
-// You might want a central types file later
+// Import central types (adjust path as needed)
+// import { AnalysisData, WordTiming } from '@/types'; // Assuming a central @/types file
 
+// --- Re-add Local Definitions for Now --- START
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+  confidence: number;
+}
 interface AnalysisToken {
   text: string;
   index: number;
@@ -18,7 +24,6 @@ interface AnalysisToken {
   russian: string | null;
   annotation_ids: string[];
 }
-
 interface AnalysisAnnotation {
   type: string;
   scope_indices: number[];
@@ -27,21 +32,15 @@ interface AnalysisAnnotation {
   explanation_english: string;
   explanation_russian: string;
 }
-
 interface AnalysisData {
-  generated_text?: {
-    tokens?: AnalysisToken[];
-    annotations?: Record<string, AnalysisAnnotation>;
+  generated_text: {
+    spanish_plain: string;
+    tokens: AnalysisToken[];
+    annotations: Record<string, AnalysisAnnotation>;
   };
-  // Add other top-level fields if needed
+  english_translation_plain: string;
 }
-
-interface WordTiming {
-  word: string;
-  start: number;
-  end: number;
-  confidence: number;
-}
+// --- Re-add Local Definitions for Now --- END
 
 interface Text {
   id: string;
@@ -53,7 +52,7 @@ interface Text {
     word_timings: WordTiming[]; // Use WordTiming interface
   } | null;
   created_at: string;
-  analysis_data: AnalysisData | null; // Add analysis_data field
+  analysis_data: AnalysisData | null; // Use AnalysisData interface
 }
 
 const API_URL = 'http://localhost:8000';
