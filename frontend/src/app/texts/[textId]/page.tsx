@@ -5,6 +5,44 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 import { AudioPlayer } from '@/components/AudioPlayer';
 
+// Import the AnalysisData interface if it's defined elsewhere, or define locally
+// Assuming it might be in @/components/AudioPlayer.tsx for now
+// You might want a central types file later
+
+interface AnalysisToken {
+  text: string;
+  index: number;
+  lemma: string;
+  pos: string;
+  english: string | null;
+  russian: string | null;
+  annotation_ids: string[];
+}
+
+interface AnalysisAnnotation {
+  type: string;
+  scope_indices: number[];
+  label: string;
+  explanation_spanish: string;
+  explanation_english: string;
+  explanation_russian: string;
+}
+
+interface AnalysisData {
+  generated_text?: {
+    tokens?: AnalysisToken[];
+    annotations?: Record<string, AnalysisAnnotation>;
+  };
+  // Add other top-level fields if needed
+}
+
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+  confidence: number;
+}
+
 interface Text {
   id: string;
   spanish_text: string;
@@ -12,14 +50,10 @@ interface Text {
   audio: {
     id: string;
     file_id: string;
-    word_timings: {
-      word: string;
-      start: number;
-      end: number;
-      confidence: number;
-    }[];
+    word_timings: WordTiming[]; // Use WordTiming interface
   } | null;
   created_at: string;
+  analysis_data: AnalysisData | null; // Add analysis_data field
 }
 
 const API_URL = 'http://localhost:8000';
@@ -126,6 +160,7 @@ export default function TextDetailPage() {
                       audioUrl={`${API_URL}/texts/${text.id}/audio`}
                       wordTimings={text.audio.word_timings}
                       text={text.spanish_text}
+                      analysisData={text.analysis_data}
                     />
                 </div>
              )}
