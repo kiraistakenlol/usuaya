@@ -3,54 +3,52 @@ import ReactPlayer from 'react-player';
 // Import central types (adjust path as needed)
 // import { AnalysisData, AnalysisToken, AnalysisAnnotation, WordTiming } from '@/types'; // Assuming a central @/types file
 
-// --- Re-add Local Definitions for Now --- START
-interface WordTiming {
+// --- Restore Local Definitions --- START
+export interface WordTiming { 
+  index: number;
   word: string;
   start: number;
   end: number;
   confidence: number;
 }
-interface AnalysisToken {
-  text: string;
-  index: number;
-  lemma: string;
-  pos: string;
-  english: string | null;
-  russian: string | null;
-  annotation_ids: string[];
-}
-interface AnalysisAnnotation {
+// Add missing/renamed interfaces back locally for now
+export interface AnalysisAnnotation {
   type: string;
-  scope_indices: number[];
+  scope_indices: number[]; 
   label: string;
   explanation_spanish: string;
   explanation_english: string;
   explanation_russian: string;
 }
-interface AnalysisData {
-  generated_text: {
-    spanish_plain: string;
-    tokens: AnalysisToken[];
-    annotations: Record<string, AnalysisAnnotation>;
-  };
-  english_translation_plain: string;
+export interface AnalysisByIndexEntry {
+  original_word: string;
+  lemma: string;
+  pos: string;
+  english_word_translation: string | null;
+  russian_word_translation: string | null;
+  annotation_ids: string[]; 
 }
-// --- Re-add Local Definitions for Now --- END
+export interface AnalysisResult {
+  analysis_by_index: Record<string, AnalysisByIndexEntry>; 
+  annotations: Record<string, AnalysisAnnotation>;
+  english_translation_plain: string; 
+}
+// --- Restore Local Definitions --- START
 
 interface AudioPlayerProps {
   audioUrl: string;
   wordTimings: WordTiming[];
   text: string;
-  analysisData: AnalysisData | null; 
+  analysisResult: AnalysisResult | null; 
 }
 
 // --- Popup Component --- START (Simple placeholder for now)
 interface WordPopupProps {
   data: { 
-      token?: AnalysisToken; // Make token optional
-      annotations?: AnalysisAnnotation[]; // Make annotations optional
+      analysisEntry?: AnalysisByIndexEntry; 
+      annotations?: AnalysisAnnotation[]; 
       error?: string; 
-      word?: string; // Add word for error display
+      word?: string; 
   } | null; 
   position: { x: number; y: number };
 }
@@ -79,11 +77,11 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
   }
   
   // If no error, token and annotations should exist (or be empty array)
-  const { token, annotations: rawAnnotations } = data;
-  if (!token) return null; // Should not happen if no error, but safeguard
+  const { analysisEntry, annotations } = data;
+  if (!analysisEntry) return null; // Should not happen if no error, but safeguard
 
   // Provide default empty array for annotations if undefined
-  const annotations = rawAnnotations || [];
+  const safeAnnotations = annotations || [];
 
   return (
     <div
@@ -96,14 +94,14 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
         zIndex: 1000, 
       }}
     >
-      <strong>{token.text}</strong>
-      <p><em>({token.lemma}, {token.pos})</em></p>
-      {token.english && <p><strong>EN:</strong> {token.english}</p>}
-      {token.russian && <p><strong>RU:</strong> {token.russian}</p>}
+      <strong>{analysisEntry.original_word}</strong>
+      <p><em>({analysisEntry.lemma}, {analysisEntry.pos})</em></p>
+      {analysisEntry.english_word_translation && <p><strong>EN:</strong> {analysisEntry.english_word_translation}</p>}
+      {analysisEntry.russian_word_translation && <p><strong>RU:</strong> {analysisEntry.russian_word_translation}</p>}
       
-      {annotations.length > 0 && <hr style={{margin: '12px 0'}} />}
+      {safeAnnotations.length > 0 && <hr style={{margin: '12px 0'}} />}
       
-      {annotations.map((ann, idx) => (
+      {safeAnnotations.map((ann, idx) => (
         <div key={idx} className="annotation-block" style={{ marginTop: idx > 0 ? '10px' : '0' }}>
           <strong className="annotation-label">{ann.label} ({ann.type})</strong>
           <p><strong>ES:</strong> {ann.explanation_spanish}</p>
@@ -116,7 +114,7 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
 };
 // --- Popup Component --- END
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings, text, analysisData }) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings, text, analysisResult }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -216,11 +214,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
   };
 
   // Handle word click
-  const handleWordClick = (timing: WordTiming) => {
-    if (playerRef.current) {
+  const handleWordClick = (index: number) => {
+    const timing = wordTimings[index];
+    if (playerRef.current && timing) {
+      console.log(`Clicked word index ${index}, pausing and seeking to: ${timing.start}`);
+      
+      // Pause, then seek, then resume
+      setIsPlaying(false); // Pause first
       playerRef.current.seekTo(timing.start, 'seconds');
-      setCurrentTime(timing.start); // Update time immediately for click responsiveness
-      setIsPlaying(true);
+
+      // Use a small timeout to allow seek to register before resuming play
+      setTimeout(() => {
+        setIsPlaying(true);
+      }, 50); // Adjust delay if needed
     }
   };
 
@@ -238,7 +244,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
   };
   // --- Helper function to clean word for matching --- END
 
-  // --- Hover Handlers --- START
+  // --- Hover Handlers - Use analysisResult --- 
   const handleMouseEnter = (event: React.MouseEvent<HTMLSpanElement>, index: number) => {
     setHoveredWordIndex(index);
     // Clear any existing timer
@@ -250,64 +256,41 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
     hoverTimerRef.current = setTimeout(() => {
       console.log('--- Popup Timer Fired ---'); 
       console.log('Hover Index (from wordTimings):', index);
-      console.log('Analysis Data Available:', !!analysisData);
+      console.log('Analysis Result Available:', !!analysisResult);
       
-      // --- Log the received analysisData object structure --- START
-      console.log('Inspecting analysisData structure:', JSON.stringify(analysisData, null, 2));
-      // --- Log the received analysisData object structure --- END
+      // --- Log the received analysisResult object structure --- START
+      console.log('Inspecting analysisResult structure:', JSON.stringify(analysisResult, null, 2));
+      // --- Log the received analysisResult object structure --- END
       
       // --- Log first few tokens from analysis for comparison --- START
-      if (analysisData?.generated_text?.tokens) { // Check if tokens exist before logging/using
-        console.log('First ~10 tokens from analysisData:', 
-          analysisData.generated_text.tokens.slice(0, 10).map(t => `"${t.text}"`).join(', ')
+      if (analysisResult?.analysis_by_index) {
+        // Type the entry in map
+        console.log('First ~10 analysis_by_index entries:', 
+          Object.entries(analysisResult.analysis_by_index).slice(0, 10).map(([key, entry]: [string, AnalysisByIndexEntry]) => `"${entry.original_word}"`).join(', ')
         );
       } else {
-          console.log('analysisData.generated_text.tokens is missing or empty.');
+          console.log('analysisResult.analysis_by_index is missing or empty.');
       }
       // --- Log first few tokens from analysis for comparison --- END
       
-      const hoveredWordTiming = wordTimings[index];
-      if (!hoveredWordTiming) { /* Safety check */ return; }
-
-      // --- Find Token by Matching Text --- START
-      const targetWordText = hoveredWordTiming.word;
-      const cleanedTargetWord = cleanWord(targetWordText); // Clean the word from timing
-
-      // --- Log first few tokens from analysis for comparison --- START
-      if (analysisData?.generated_text?.tokens) {
-        console.log('First ~10 tokens from analysisData:', 
-          analysisData.generated_text.tokens.slice(0, 10).map(t => `"${t.text}"`).join(', ')
-        );
+      const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
+      const word = wordTimings[index]?.word || '(unknown word)'; // Get word from timings
+      if (!analysisEntry) {
+        console.warn(`No analysis entry found for index: ${index}`);
+        setPopupData({ error: 'Missing analysis data for word', word: word }); 
+      } else {
+        // Add type for id parameter
+        const annotations = analysisEntry.annotation_ids
+          .map((id: string) => analysisResult?.annotations?.[id])
+          .filter((ann): ann is AnalysisAnnotation => !!ann); 
+        
+        const popupInfo = {
+            analysisEntry: analysisEntry,
+            annotations: annotations,
+            word: analysisEntry.original_word || word 
+        };
+        setPopupData(popupInfo);
       }
-      // --- Log first few tokens from analysis for comparison --- END
-
-      const foundToken = analysisData?.generated_text?.tokens?.find(token => { 
-          const cleanedTokenText = cleanWord(token.text); // Clean the token text
-          return cleanedTokenText === cleanedTargetWord; // Compare cleaned versions
-      });
-      console.log(`Looking for token matching cleaned word: "${cleanedTargetWord}" (Original: "${targetWordText}")`);
-      console.log('Matching Token Data Found:', foundToken);
-      // --- Find Token by Matching Text --- END
-
-      if (!foundToken) {
-        console.warn(`No analysis token data found matching word: "${targetWordText}"`);
-        setPopupData({ error: 'Missing analysis data for word', word: targetWordText }); 
-        setPopupPosition({ x: event.clientX, y: event.clientY });
-        setIsPopupVisible(true);
-        return;
-      }
-
-      const annotations = foundToken.annotation_ids
-        .map(id => analysisData?.generated_text?.annotations?.[id])
-        .filter((ann): ann is AnalysisAnnotation => !!ann); 
-      
-      const popupInfo = {
-          token: foundToken,
-          annotations: annotations,
-      };
-
-      setPopupData(popupInfo);
-      // --- Fetch Real Data --- END
 
       setPopupPosition({ x: event.clientX, y: event.clientY });
       setIsPopupVisible(true);
@@ -324,7 +307,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
     setIsPopupVisible(false);
     setPopupData(null);
   };
-  // --- Hover Handlers --- END
+  // --- Hover Handlers - Use analysisResult --- END
 
   // Split text into words and render with highlighting
   const renderText = () => {
@@ -345,40 +328,29 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
     return wordTimings.map((timing, index) => {
       const isCurrentWord = index === highlightIndex; 
 
-      // --- Find Corresponding Analysis Token & Annotations --- START
+      // --- Get Annotation Classes --- 
       let analysisClasses = '';
-      let associatedAnnotationTypes = new Set<string>();
-
-      if (analysisData?.generated_text?.tokens) {
-        const targetWordText = timing.word;
-        const cleanedTargetWord = cleanWord(targetWordText); 
-
-        // Find the *first* matching token (limitations discussed previously apply)
-        const foundToken = analysisData.generated_text.tokens.find(token => {
-            const cleanedTokenText = cleanWord(token.text); 
-            return cleanedTokenText === cleanedTargetWord;
+      const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
+      if (analysisEntry && analysisEntry.annotation_ids.length > 0) {
+        let associatedAnnotationTypes = new Set<string>();
+        // Add type for id parameter
+        analysisEntry.annotation_ids.forEach((id: string) => {
+          const annotation = analysisResult?.annotations?.[id];
+          if (annotation) {
+            associatedAnnotationTypes.add(annotation.type);
+          }
         });
-
-        if (foundToken && foundToken.annotation_ids.length > 0) {
-          foundToken.annotation_ids.forEach(id => {
-            const annotation = analysisData?.generated_text?.annotations?.[id];
-            if (annotation) {
-              associatedAnnotationTypes.add(annotation.type); // Collect unique types
-            }
-          });
-        }
-        // Convert types to CSS classes (e.g., 'annotation-slang', 'annotation-grammar')
         analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
       }
-      // --- Find Corresponding Analysis Token & Annotations --- END
+      // --- Get Annotation Classes --- 
 
       return (
         <span
-          key={index}
-          onClick={() => handleWordClick(timing)}
+          key={`word-${index}`}
+          onClick={() => handleWordClick(index)}
           onMouseEnter={(e) => handleMouseEnter(e, index)}
           onMouseLeave={handleMouseLeave}
-          className={analysisClasses} // Add generated classes
+          className={analysisClasses}
           style={{
             cursor: 'pointer',
             color: isCurrentWord ? 'white' : '#1a1a1a',
@@ -389,7 +361,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
             position: 'relative',
             display: 'inline-block',
             padding: '0 2px',
-            // Subtle hover effect remains, playback highlight takes precedence
             backgroundColor: isCurrentWord ? '#3b82f6' : hoveredWordIndex === index ? '#e0e0e0' : 'transparent', 
             borderRadius: '4px',
             minWidth: '1em',
@@ -415,7 +386,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
           onDuration={handleDuration}
           width="100%"
           height="50px"
-          controls={true}
+          controls={true} // Restore native controls
           progressInterval={100}
         />
       </div>

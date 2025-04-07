@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne, JoinColumn } from 'typeorm';
 import { Phrase } from './phrase.entity';
 import { Audio } from './audio.entity';
-import { AnalysisData } from '../types/analysis-data.types';
+import { TextAnalysisData } from '../types/analysis-data.types';
 
 @Entity('text')
 export class Text {
@@ -15,14 +15,14 @@ export class Text {
   english_translation: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  analysis_data: AnalysisData | null;
+  analysis_data: TextAnalysisData | null;
 
-  @OneToOne(() => Audio, audio => audio.text)
+  @OneToOne(() => Audio, audio => audio.text, { cascade: true, nullable: true })
   @JoinColumn({ name: 'audio_id' })
-  audio: Audio;
+  audio: Audio | null;
 
-  @Column({ nullable: true })
-  audio_id: string;
+  @Column({ type: 'uuid', nullable: true })
+  audio_id: string | null;
 
   @ManyToMany(() => Phrase)
   @JoinTable({

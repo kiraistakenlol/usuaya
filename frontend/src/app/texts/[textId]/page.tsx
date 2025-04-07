@@ -5,54 +5,58 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 import { AudioPlayer } from '@/components/AudioPlayer';
 
-// Import central types (adjust path as needed)
-// import { AnalysisData, WordTiming } from '@/types'; // Assuming a central @/types file
-
-// --- Re-add Local Definitions for Now --- START
-interface WordTiming {
+// --- Use Final Data Structure Type --- START
+// Remove old definitions, assume types are central or defined in AudioPlayer
+// Import TextAnalysisData if centralizing types
+// For now, redefine locally based on backend
+export interface IndexedWordSegment {
+  index: number;
   word: string;
   start: number;
   end: number;
   confidence: number;
 }
-interface AnalysisToken {
-  text: string;
-  index: number;
-  lemma: string;
-  pos: string;
-  english: string | null;
-  russian: string | null;
-  annotation_ids: string[];
-}
-interface AnalysisAnnotation {
+
+export interface AnalysisAnnotation {
   type: string;
-  scope_indices: number[];
+  scope_indices: number[]; // References input indices
   label: string;
   explanation_spanish: string;
   explanation_english: string;
   explanation_russian: string;
 }
-interface AnalysisData {
-  generated_text: {
-    spanish_plain: string;
-    tokens: AnalysisToken[];
-    annotations: Record<string, AnalysisAnnotation>;
-  };
-  english_translation_plain: string;
+
+export interface AnalysisByIndexEntry {
+  original_word: string;
+  lemma: string;
+  pos: string;
+  english_word_translation: string | null;
+  russian_word_translation: string | null;
+  annotation_ids: string[]; // IDs linking to top-level annotations
 }
-// --- Re-add Local Definitions for Now --- END
+
+export interface AnalysisResult {
+  analysis_by_index: Record<string, AnalysisByIndexEntry>; // Key is stringified input index
+  annotations: Record<string, AnalysisAnnotation>;
+  english_translation_plain: string; // Add missing field
+}
+
+export interface TextAnalysisData {
+  spanish_plain: string;
+  english_translation_plain: string;
+  word_timings: IndexedWordSegment[];
+  analysis_result: AnalysisResult;
+}
+// --- Use Final Data Structure Type --- END
 
 interface Text {
   id: string;
   spanish_text: string;
   english_translation: string | null;
-  audio: {
-    id: string;
-    file_id: string;
-    word_timings: WordTiming[]; // Use WordTiming interface
-  } | null;
+  analysis_data: TextAnalysisData | null;
+  audio_id: string | null; // Direct audio file ID
   created_at: string;
-  analysis_data: AnalysisData | null; // Use AnalysisData interface
+  updated_at: string; // Added if available/needed
 }
 
 const API_URL = 'http://localhost:8000';
@@ -82,7 +86,7 @@ export default function TextDetailPage() {
           }
         }
         const data: Text = await response.json();
-        console.log('Fetched text data:', data);
+        console.log('Fetched text data (new structure):', data);
         setText(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -152,14 +156,15 @@ export default function TextDetailPage() {
                </p>
              </div>
              
-             {/* Audio Player */}
-             {text.audio && (
+             {/* Audio Player - Pass relevant parts of analysis_data */}
+             {/* Check if analysis_data and nested properties exist */}
+             {text.analysis_data && text.analysis_data.word_timings && text.audio_id && (
                 <div className="mt-4">
                     <AudioPlayer
                       audioUrl={`${API_URL}/texts/${text.id}/audio`}
-                      wordTimings={text.audio.word_timings}
-                      text={text.spanish_text}
-                      analysisData={text.analysis_data}
+                      wordTimings={text.analysis_data.word_timings}
+                      text={text.analysis_data.spanish_plain}
+                      analysisResult={text.analysis_data.analysis_result}
                     />
                 </div>
              )}

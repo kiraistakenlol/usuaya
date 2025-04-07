@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 import { Text } from './text.entity';
+import { WordTiming } from '../types/analysis-data.types';
 
 @Entity('audio')
 export class Audio {
@@ -10,12 +11,7 @@ export class Audio {
   file_id: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  word_timings: {
-    word: string;
-    start: number;
-    end: number;
-    confidence: number;
-  }[];
+  word_timings: WordTiming[] | null;
 
   @OneToOne(() => Text, text => text.audio)
   text: Text;

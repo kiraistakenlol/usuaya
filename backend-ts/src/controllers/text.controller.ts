@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Res, NotFoundException, BadRequestE
 import { Response } from 'express';
 import { TextService } from '../services/text.service';
 import { CreateTextDto, TextResponseDto } from '../dto/text.dto';
+import { TextAnalysisData } from '../types/analysis-data.types';
 import { isUUID } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 
@@ -24,7 +25,7 @@ export class TextController {
 
     // --- Manually Re-assign analysis_data --- START
     if (result.analysis_data) { 
-      dto.analysis_data = result.analysis_data;
+      dto.analysis_data = result.analysis_data as TextAnalysisData;
     }
     // --- Manually Re-assign analysis_data --- END
 
@@ -46,7 +47,7 @@ export class TextController {
       
       // --- Manually Re-assign analysis_data --- START
       if (text.analysis_data) { 
-        dto.analysis_data = text.analysis_data;
+        dto.analysis_data = text.analysis_data as TextAnalysisData;
       }
       // --- Manually Re-assign analysis_data --- END
       
@@ -76,8 +77,9 @@ export class TextController {
     // --- Manually Re-assign analysis_data --- START
     // plainToClass strips nested objects typed as 'any' when excludeExtraneousValues is true.
     // We assign it manually from the original entity after transformation.
+    // Cast entity field to the correct type for safety
     if (text.analysis_data) { 
-      dto.analysis_data = text.analysis_data;
+      dto.analysis_data = text.analysis_data as TextAnalysisData;
     }
     // --- Manually Re-assign analysis_data --- END
 
