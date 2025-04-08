@@ -57,8 +57,7 @@ export class TextService {
       // 6. Create and save Text entity, linking the Audio entity
       const text = this.textRepository.create({
         spanish_text: spanishText, 
-        // english_translation: analysisData.english_data.plain, // Removed - No longer storing plain text this way
-        analysis_data: analysisData, 
+        analysis_data: analysisData,
         audio: audioEntity, // Assign the full Audio entity to the relation
       });
 

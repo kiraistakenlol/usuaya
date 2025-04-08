@@ -75,7 +75,7 @@ GET /texts/:id
 ### Audio Retrieval
 
 ```http
-GET /texts/:id/audio 
+GET /texts/:id/audio
 ```
 
 ## Development

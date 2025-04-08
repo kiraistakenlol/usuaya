@@ -163,28 +163,48 @@ body {
    font-weight: normal;
 }
 
-/* Annotation Highlighting Styles */
+/* Styles for Annotated Words (Using text-decoration) */
+.annotation-grammar {
+  /* Example: Wavy blue underline for grammar points */
+  text-decoration: underline wavy blue 1.5px;
+  text-underline-offset: 2px; /* Adjust spacing */
+}
+
 .annotation-slang {
-  border-bottom: 2px dotted #fd7e14; /* Dotted orange for slang */
+  /* Example: Dotted green underline for slang */
+  text-decoration: underline dotted green 2px;
+  text-underline-offset: 2px;
 }
 
 .annotation-idiom {
-  border-bottom: 2px dotted #0dcaf0; /* Dotted cyan for idiom */
-}
-
-.annotation-grammar {
-  border-bottom: 2px dotted #6f42c1; /* Dotted purple for grammar */
-}
-
-.annotation-cultural_note {
-  border-bottom: 2px dotted #198754; /* Dotted green for culture */
+  /* Example: Dashed purple underline for idioms */
+  text-decoration: underline dashed purple 2px;
+  text-underline-offset: 2px;
+  /* Alternative: a subtle border */
+  /* border-bottom: 2px dashed purple; */
+  /* padding-bottom: 1px; */
 }
 
 /* Add more styles for other annotation types as needed */
+.annotation-cultural {
+   border-bottom: 2px solid orange;
+   padding-bottom: 1px;
+}
 
-/* Ensure underlines don't add extra space */
-[class^="annotation-"] {
-  padding-bottom: 1px; /* Adjust slightly if needed */
-  margin-bottom: -3px; /* Pull underline closer */
-  display: inline-block; /* Needed for margin/padding */
+/* Add a default style for any other annotation type if desired */
+/*
+.annotation-default {
+  font-style: italic;
+}
+*/
+
+/* Ensure highlighted words still show annotation styles */
+span[style*="background-color: #3b82f6"].annotation-grammar,
+span[style*="background-color: #3b82f6"].annotation-slang,
+span[style*="background-color: #3b82f6"].annotation-idiom,
+span[style*="background-color: #3b82f6"].annotation-cultural {
+  /* Keep the underline color distinct from the highlight background */
+  /* The text-decoration property itself should still apply */
+  /* We might need !important if overrides are tricky, but avoid if possible */
+   /* color: white; /* Ensure text remains visible */
 }
