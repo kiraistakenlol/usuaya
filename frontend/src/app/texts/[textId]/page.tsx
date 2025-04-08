@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
 import Link from 'next/link';
 import {AudioPlayer} from '@/components/AudioPlayer';
@@ -164,24 +164,37 @@ export default function TextDetailPage() {
             clearTimeout(hoverTimerRef.current);
         }
 
+        // --- Update Hover Highlight Scope --- START ---
+        const annotationsForHoveredWord = processedAnnotationsByWordIndex.get(index);
+        let indicesToHighlight = new Set<number>();
+        if (annotationsForHoveredWord && annotationsForHoveredWord.length > 0) {
+            annotationsForHoveredWord.forEach(({ annotation }) => {
+                if (annotation.scope_indices) {
+                    annotation.scope_indices.forEach(idx => indicesToHighlight.add(idx));
+                }
+            });
+        }
+        setHoverHighlightIndices(indicesToHighlight);
+        // --- Update Hover Highlight Scope --- END ---
+
         const timeout = setTimeout(() => {
             const analysisEntry = text?.analysis_data?.analysis_result?.analysis_by_index?.[String(index)];
             const word = text?.analysis_data?.word_timings?.[index]?.word || '(unknown word)';
             
             // Get annotations using the precomputed map
-            const annotations = annotationsByWordIndex.get(index) || [];
+            const annotations = processedAnnotationsByWordIndex.get(index) || [];
 
-            // Pass analysisEntry (if exists) and the found annotations
+            // Pass analysisEntry (if exists) and the found annotations (which now include instanceNumber)
             const popupInfo = {
-                analysisEntry: analysisEntry || undefined, // Pass entry if found
-                annotations: annotations, 
-                word: analysisEntry?.original_word || word // Use original word from entry if possible
+                analysisEntry: analysisEntry || undefined, 
+                annotations: annotations, // Pass the array of { annotation, instanceNumber }
+                word: analysisEntry?.original_word || word 
             };
             setPopupData(popupInfo); 
 
             setPopupPosition({x: event.clientX, y: event.clientY});
             setIsPopupVisible(true);
-        }, 500);
+        }, 500); // Popup delay
 
         hoverTimerRef.current = timeout;
     };
@@ -191,6 +204,7 @@ export default function TextDetailPage() {
         if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
         setIsPopupVisible(false);
         setPopupData(null);
+        setHoverHighlightIndices(new Set()); // Clear hover scope highlight
     };
 
     useEffect(() => {
@@ -233,25 +247,59 @@ export default function TextDetailPage() {
     }, [isPlayerReady, isPlaying, currentTime, duration]); // Dependencies updated
     // --- Interaction Handlers --- END ---
 
-    // --- Precompute Annotations by Word Index --- START ---
-    const annotationsByWordIndex = useMemo(() => {
-        const map = new Map<number, AnalysisAnnotation[]>();
+    // --- Precompute Annotations by Word Index (with Instance Numbers) --- START ---
+    const processedAnnotationsByWordIndex = useMemo(() => {
+        const map = new Map<number, { annotation: AnalysisAnnotation; instanceNumber: number }[]>();
         const annotations = text?.analysis_data?.analysis_result?.annotations;
         if (!annotations) return map;
 
-        Object.values(annotations).forEach(annotation => {
-            if (annotation.scope_indices) {
-                annotation.scope_indices.forEach(index => {
+        const typeCounters: Record<string, number> = {}; // Track instance numbers per type
+        const processedAnnotations: Record<string, AnalysisAnnotation & { instanceNumber: number }> = {};
+
+        // First pass: Assign instance numbers to each annotation
+        Object.entries(annotations).forEach(([id, annotation]) => {
+            const type = annotation.type || 'unknown';
+            if (!typeCounters[type]) {
+                typeCounters[type] = 0;
+            }
+            typeCounters[type]++;
+            processedAnnotations[id] = {
+                ...annotation,
+                instanceNumber: typeCounters[type]
+            };
+        });
+
+        // Second pass: Map indices to processed annotations
+        Object.values(processedAnnotations).forEach(processedAnn => {
+            if (processedAnn.scope_indices) {
+                processedAnn.scope_indices.forEach(index => {
                     if (!map.has(index)) {
                         map.set(index, []);
                     }
-                    map.get(index)?.push(annotation);
+                    // Add the annotation with its instance number
+                    map.get(index)?.push({ annotation: processedAnn, instanceNumber: processedAnn.instanceNumber });
                 });
             }
         });
+
+        // Sort annotations for each index by type then number for consistent display
+        map.forEach((annotationsList) => {
+            annotationsList.sort((a, b) => {
+                if (a.annotation.type !== b.annotation.type) {
+                    return a.annotation.type.localeCompare(b.annotation.type);
+                }
+                return a.instanceNumber - b.instanceNumber;
+            });
+        });
+
+        console.log("Processed Annotations Map:", map); // For debugging
         return map;
     }, [text?.analysis_data?.analysis_result?.annotations]);
-    // --- Precompute Annotations by Word Index --- END ---
+    // --- Precompute Annotations by Word Index (with Instance Numbers) --- END ---
+
+     // --- Hover State --- START ---
+     const [hoverHighlightIndices, setHoverHighlightIndices] = useState<Set<number>>(new Set());
+     // --- Hover State --- END ---
 
     // --- Calculate Highlight Indices --- START ---
     // Calculate Spanish highlight index
@@ -293,54 +341,91 @@ export default function TextDetailPage() {
 
         return wordTimings.map((timing, index) => {
             const isCurrentWord = index === highlightSpanishIndex;
-            let analysisClasses = '';
-            const annotationsForWord = annotationsByWordIndex.get(index);
-            
+            const annotationsForWord = processedAnnotationsByWordIndex.get(index);
+            const isHoverHighlighted = hoverHighlightIndices.has(index);
+
+            // Determine background color
+            let backgroundColor = 'transparent';
+            if (isCurrentWord) {
+                backgroundColor = '#3b82f6';
+            } else if (isHoverHighlighted) {
+                backgroundColor = 'rgba(255, 230, 150, 0.6)';
+            } else if (hoveredWordIndex === index) {
+                backgroundColor = '#e0e0e0';
+            }
+
+            // Determine annotation CSS classes for underlines
+            let annotationClasses = '';
             if (annotationsForWord && annotationsForWord.length > 0) {
-                let associatedAnnotationTypes = new Set<string>();
-                annotationsForWord.forEach(annotation => {
-                    associatedAnnotationTypes.add(annotation.type);
-                });
-                analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
+                const types = new Set<string>();
+                annotationsForWord.forEach(({ annotation }) => types.add(annotation.type));
+                annotationClasses = Array.from(types).map(type => `annotation-${type}`).join(' ');
             }
-            /* Old logic using annotation_ids:
-            const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
-            if (analysisEntry && analysisEntry.annotation_ids.length > 0) {
-                let associatedAnnotationTypes = new Set<string>();
-                analysisEntry.annotation_ids.forEach((id: string) => {
-                    const annotation = analysisResult?.annotations?.[id];
-                    if (annotation) {
-                        associatedAnnotationTypes.add(annotation.type);
-                    }
-                });
-                analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
-            }
-            */
+
             return (
-                <span
-                    key={`word-${index}`}
-                    onClick={() => handleWordClick(index)}
-                    onMouseEnter={(e) => handleMouseEnter(e, index)}
-                    onMouseLeave={handleMouseLeave}
-                    className={analysisClasses}
-                    style={{ /* ... existing styles ... */
-                        cursor: 'pointer',
-                        color: isCurrentWord ? 'white' : '#1a1a1a',
-                        transition: 'color 0.2s ease, background-color 0.2s ease',
-                        fontSize: '16px',
-                        lineHeight: '1.6',
-                        fontWeight: isCurrentWord ? 'bold' : 'normal',
-                        position: 'relative',
-                        display: 'inline-block',
-                        padding: '0 2px',
-                        backgroundColor: isCurrentWord ? '#3b82f6' : hoveredWordIndex === index ? '#e0e0e0' : 'transparent',
-                        borderRadius: '4px',
-                        minWidth: '1em',
-                        textAlign: 'center',
-                    }}
+                // Using a wrapper span to ensure relative positioning context for badges
+                <span 
+                   key={`word-wrapper-${index}`}
+                   style={{ position: 'relative', display: 'inline-block'}} // Context for absolute badge
                 >
-          {timing.word}{' '}
-        </span>
+                    <span
+                        key={`word-${index}`} 
+                        onClick={() => handleWordClick(index)}
+                        onMouseEnter={(e) => handleMouseEnter(e, index)}
+                        onMouseLeave={handleMouseLeave}
+                        className={annotationClasses} // Apply classes for underlines
+                        style={{ 
+                            cursor: 'pointer',
+                            color: isCurrentWord ? 'white' : '#1a1a1a',
+                            transition: 'color 0.2s ease, background-color 0.2s ease',
+                            fontSize: '16px',
+                            lineHeight: '1.6',
+                            fontWeight: isCurrentWord ? 'bold' : 'normal',
+                            // position: 'relative', // Moved to wrapper span
+                            display: 'inline-block',
+                            padding: '0 2px',
+                            backgroundColor: backgroundColor, 
+                            borderRadius: '4px',
+                            minWidth: '1em',
+                            textAlign: 'center',
+                            // marginRight: '2px', // Remove margin, use padding if needed for badge space visually
+                            // paddingRight: annotationsForWord && annotationsForWord.length > 0 ? '8px' : '2px', // Add padding if badges visually overlap word
+                        }}
+                    >
+                      {timing.word}
+                    </span>
+                    {/* Badges container - absolutely positioned */} 
+                    <span 
+                       style={{
+                           position: 'absolute', 
+                           bottom: '-4px', // Position below the word
+                           right: '-2px', // Position to the right
+                           lineHeight: 1, 
+                           whiteSpace: 'nowrap', // Prevent badges from wrapping
+                           pointerEvents: 'none', // Don't interfere with word hover
+                           zIndex: 2, // Ensure badges are above underlines/backgrounds
+                       }}
+                    >
+                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber }, badgeIndex) => (
+                            <span 
+                               key={`badge-${index}-${badgeIndex}`} 
+                               style={{
+                                   display: 'inline-block',
+                                   marginLeft: '1px', // Tiny space between badges
+                                   padding: '0px 3px',
+                                   fontSize: '9px',
+                                   fontWeight: 'bold',
+                                   color: '#fff',
+                                   borderRadius: '3px',
+                                   backgroundColor: getAnnotationTypeBadgeColor(annotation.type), 
+                               }}
+                            >
+                                {instanceNumber}
+                            </span>
+                        ))}
+                    </span>
+                    {' '}
+                 </span>
             );
         });
     };
@@ -367,6 +452,26 @@ export default function TextDetailPage() {
             );
         }).reduce((prev, curr, index) => <>{prev}{index > 0 ? ' ' : ''}{curr}</>, <></>);
     };
+
+    // Need to define getAnnotationTypeBadgeColor or import if moved
+    // Helper function to get badge color based on Annotation Type
+    const getAnnotationTypeBadgeColor = (type: string): string => {
+        const lowerType = type.toLowerCase();
+        switch (lowerType) {
+          case 'grammar':
+            return '#1f77b4'; // Blue
+          case 'slang':
+            return '#2ca02c'; // Green
+          case 'idiom':
+            return '#9467bd'; // Purple
+          case 'cultural':
+          case 'cultural_note':
+            return '#ff7f0e'; // Orange
+          default:
+            return '#6c757d'; // Default Gray
+        }
+     };
+
     // --- Render Functions --- END ---
 
   return (

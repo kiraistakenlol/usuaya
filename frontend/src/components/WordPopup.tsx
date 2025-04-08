@@ -2,10 +2,16 @@ import React from 'react';
 // Import shared analysis types from the central location
 import {AnalysisAnnotation, AnalysisByIndexEntry} from '@/types/analysis';
 
+// Update PopupData to expect annotations with instance numbers
+interface ProcessedAnnotation {
+    annotation: AnalysisAnnotation;
+    instanceNumber: number;
+}
+
 interface PopupData {
     word: string;
     analysisEntry?: AnalysisByIndexEntry;
-    annotations?: AnalysisAnnotation[];
+    annotations?: ProcessedAnnotation[]; // Use ProcessedAnnotation type
     error?: string;
 }
 
@@ -225,7 +231,7 @@ const WordPopup: React.FC<WordPopupProps> = ({data, position, onClose}) => {
                     <div style={annotationStyle}>
                         <p style={annotationTitleStyle}>Annotations:</p>
                         <ul style={{paddingLeft: '20px', margin: 0}}> {/* Basic list styling */}
-                            {annotations.map((ann, index) => (
+                            {annotations.map(({ annotation: ann, instanceNumber }, index) => (
                                 <li key={`${ann.label}-${index}`}
                                     style={{marginBottom: '6px'}}> {/* Increased margin */}
                                     <span style={{ /* Annotation Type Badge */
@@ -234,6 +240,10 @@ const WordPopup: React.FC<WordPopupProps> = ({data, position, onClose}) => {
                                     }}>
                     {ann.type}
                   </span>
+                                    {/* Display Instance Number */}
+                                    <sup style={{ fontWeight: 'bold', marginLeft: '3px', marginRight: '3px' }}>
+                                        {instanceNumber}
+                                    </sup>
                                     <strong>[{ann.label}]</strong> {ann.explanation_english}
                                 </li>
                             ))}

@@ -163,11 +163,14 @@ body {
    font-weight: normal;
 }
 
-/* Styles for Annotated Words (Using text-decoration) */
+/* REMOVE CONFLICTING OLD STYLES END */
+
+/* RESTORE Annotation Underline Styles START */
+
 .annotation-grammar {
   /* Example: Wavy blue underline for grammar points */
   text-decoration: underline wavy blue 1.5px;
-  text-underline-offset: 2px; /* Adjust spacing */
+  text-underline-offset: 2px;
 }
 
 .annotation-slang {
@@ -180,16 +183,22 @@ body {
   /* Example: Dashed purple underline for idioms */
   text-decoration: underline dashed purple 2px;
   text-underline-offset: 2px;
-  /* Alternative: a subtle border */
-  /* border-bottom: 2px dashed purple; */
-  /* padding-bottom: 1px; */
 }
 
+.annotation-cultural {
+   border-bottom: 2px solid orange; /* Using border here as example */
+   padding-bottom: 1px;
+}
+
+/* RESTORE Annotation Underline Styles END */
+
 /* Add more styles for other annotation types as needed */
+/*
 .annotation-cultural {
    border-bottom: 2px solid orange;
    padding-bottom: 1px;
 }
+*/
 
 /* Add a default style for any other annotation type if desired */
 /*
@@ -198,13 +207,14 @@ body {
 }
 */
 
-/* Ensure highlighted words still show annotation styles */
+/* RESTORE Styles trying to preserve underlines on highlight START */
+
 span[style*="background-color: #3b82f6"].annotation-grammar,
 span[style*="background-color: #3b82f6"].annotation-slang,
 span[style*="background-color: #3b82f6"].annotation-idiom,
 span[style*="background-color: #3b82f6"].annotation-cultural {
-  /* Keep the underline color distinct from the highlight background */
-  /* The text-decoration property itself should still apply */
-  /* We might need !important if overrides are tricky, but avoid if possible */
-   /* color: white; /* Ensure text remains visible */
+   /* Ensure text-decoration persists, color might need adjustment if needed */
+   /* Color is inherited or set on the parent span */
 }
+
+/* RESTORE Styles trying to preserve underlines on highlight END */
