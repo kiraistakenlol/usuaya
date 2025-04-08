@@ -75,27 +75,29 @@ const API_URL = 'http://localhost:8000';
 
 export default function TextDetailPage() {
   const params = useParams();
-  const textId = params.textId; // Get the ID from the URL
+  const textId = params.textId as string; // Assume valid string ID
 
   const [text, setText] = useState<Text | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null); // State for blob URL
+  const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false); // State for audio fetch
 
+  // Effect to fetch text details
   useEffect(() => {
-    if (!textId) return; // Don't fetch if ID is not available yet
-
+    if (!textId) return; 
+    // Reset blob URL when ID changes
+    setAudioBlobUrl(null);
     const fetchText = async () => {
       setLoading(true);
       setError(null);
+      setAudioError(null);
       try {
         const response = await fetch(`${API_URL}/texts/${textId}`);
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Text not found');
-          } else {
-            throw new Error('Failed to fetch text details');
-          }
+          if (response.status === 404) throw new Error('Text not found');
+          else throw new Error('Failed to fetch text details');
         }
         const data: Text = await response.json();
         console.log('Fetched text data (new structure):', data);
@@ -107,13 +109,60 @@ export default function TextDetailPage() {
         setLoading(false);
       }
     };
-
     fetchText();
-  }, [textId]); // Refetch if textId changes
+  }, [textId]); 
+
+  // Effect to fetch audio blob when text is loaded
+  useEffect(() => {
+    // Only run if we have text details and an audio_id, and haven't fetched yet
+    if (text && text.audio_id && !audioBlobUrl && !isAudioLoading) {
+      let objectUrl: string | null = null;
+
+      const fetchAudio = async () => {
+        setIsAudioLoading(true);
+        setAudioError(null);
+        console.log(`Fetching audio blob for text ID: ${text.id}`);
+        try {
+          const response = await fetch(`${API_URL}/texts/${text.id}/audio`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch audio (status: ${response.status})`);
+          }
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          console.log(`Created blob URL: ${objectUrl}`);
+          setAudioBlobUrl(objectUrl);
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'An unknown error occurred fetching audio';
+          console.error('Audio fetch error:', errorMsg);
+          setAudioError(errorMsg);
+        } finally {
+          setIsAudioLoading(false);
+        }
+      };
+
+      fetchAudio();
+
+      // Cleanup function
+      return () => {
+        if (objectUrl) {
+          console.log(`Revoking blob URL: ${objectUrl}`);
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+    }
+    // Also run cleanup if the component unmounts or text changes before fetch completes
+    return () => {
+      if (audioBlobUrl) {
+         console.log(`Revoking blob URL on unmount/text change: ${audioBlobUrl}`);
+         URL.revokeObjectURL(audioBlobUrl);
+      }
+    }
+
+  }, [text, audioBlobUrl, isAudioLoading]); // Dependencies
 
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
-    console.error('Audio error:', e);
-    setAudioError('Failed to load audio file');
+    console.error('Audio error reported by element:', e);
+    setAudioError('Failed to load or play audio');
   };
 
   return (
@@ -168,19 +217,42 @@ export default function TextDetailPage() {
                </p>
              </div>
              
-             {/* Audio Player - Pass relevant parts of analysis_data */}
-             {/* Check if analysis_data and nested properties exist */}
-             {text.analysis_data && text.analysis_data.word_timings && text.audio_id && (
-                <div className="mt-4">
-                    <AudioPlayer
-                      audioUrl={`${API_URL}/texts/${text.id}/audio`}
-                      wordTimings={text.analysis_data.word_timings}
-                      text={text.analysis_data.spanish_plain}
-                      analysisResult={text.analysis_data.analysis_result}
-                      englishData={text.analysis_data.english_data}
-                    />
-                </div>
+             {/* Use simplified AudioPlayer */}
+             {isAudioLoading && <p className="text-gray-500 mt-4">Loading audio...</p>}
+             {audioError && 
+               <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mt-4" role="alert">
+                   <strong className="font-bold">Audio Error:</strong>
+                   <span className="block sm:inline"> {audioError}</span>
+               </div>
+             }
+             {/* Check analysis_data exists before rendering player */}
+             {audioBlobUrl && text.analysis_data && (
+               <div className="mt-4">
+                   <AudioPlayer
+                     audioUrl={audioBlobUrl}
+                     wordTimings={text.analysis_data.word_timings}
+                     analysisResult={text.analysis_data.analysis_result}
+                   />
+               </div>
              )}
+
+             {/* --- Remove Native HTML5 Audio Element --- START */}
+             {/* 
+             {text.audio_id && (
+               <div className="mt-6 border-t pt-4">
+                 <h4 className="text-sm font-medium text-gray-600 mb-2">Native Audio Element Test:</h4>
+                 <audio 
+                   controls 
+                   src={audioBlobUrl || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"} // Use blob URL here too if testing
+                   className="w-full"
+                   onError={handleAudioError}
+                 >
+                   Your browser does not support the audio element.
+                 </audio>
+               </div>
+             )}
+             */}
+             {/* --- Remove Native HTML5 Audio Element --- END */}
 
              <div 
                 style={{

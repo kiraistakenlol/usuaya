@@ -68,15 +68,16 @@ export interface TextAnalysisData {
 
 // --- Restore Local Definitions --- END
 
+// Restore Props
 interface AudioPlayerProps {
-  audioUrl: string;
+  audioUrl: string; // Will receive blob URL
   wordTimings: WordTiming[];
-  text: string; // This might be spanish_plain now? Let's leave as is for now.
-  analysisResult: AnalysisResult | null; // Type now matches page.tsx
-  englishData: EnglishData | null; // Add english_data separately for clarity
+  analysisResult: AnalysisResult | null;
+  // englishData: EnglishData | null; // Add if needed for inline English highlighting
 }
 
-// --- Popup Component --- START (Simple placeholder for now)
+// --- Restore Popup Component --- START
+// ... (Paste the WordPopup component definition here again) ...
 interface WordPopupProps {
   data: { 
       analysisEntry?: AnalysisByIndexEntry; 
@@ -89,51 +90,23 @@ interface WordPopupProps {
 
 const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
   if (!data || !position) return null;
-
-  // Handle case where token data might be missing (error set in handleMouseEnter)
   if (data.error) {
      return (
-       <div
-         className="word-popup error"
-         style={{
-           position: 'absolute',
-           left: `${position.x}px`,
-           top: `${position.y}px`,
-           transform: 'translate(10px, 10px)',
-           zIndex: 1000,
-         }}
-       >
-         {/* Use the word passed in the error data structure */}
+       <div className="word-popup error" style={{ position: 'absolute', left: `${position.x}px`, top: `${position.y}px`, transform: 'translate(10px, 10px)', zIndex: 1000 }}>
          <strong>{data.word || 'Error'}</strong> 
          <p><em>{data.error}</em></p>
        </div>
      );
   }
-  
-  // If no error, token and annotations should exist (or be empty array)
   const { analysisEntry, annotations } = data;
-  if (!analysisEntry) return null; // Should not happen if no error, but safeguard
-
-  // Provide default empty array for annotations if undefined
+  if (!analysisEntry) return null;
   const safeAnnotations = annotations || [];
-
   return (
-    <div
-      className="word-popup"
-      style={{
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: 'translate(10px, 10px)', 
-        zIndex: 1000, 
-      }}
-    >
+    <div className="word-popup" style={{ position: 'absolute', left: `${position.x}px`, top: `${position.y}px`, transform: 'translate(10px, 10px)', zIndex: 1000 }}>
       <strong>{analysisEntry.original_word}</strong>
       <p><em>({analysisEntry.lemma}, {analysisEntry.pos})</em></p>
       {analysisEntry.english_word_translation && <p><strong>EN:</strong> {analysisEntry.english_word_translation}</p>}
-      
       {safeAnnotations.length > 0 && <hr style={{margin: '12px 0'}} />}
-      
       {safeAnnotations.map((ann, idx) => (
         <div key={idx} className="annotation-block" style={{ marginTop: idx > 0 ? '10px' : '0' }}>
           <strong className="annotation-label">{ann.label} ({ann.type})</strong>
@@ -144,230 +117,126 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
     </div>
   );
 };
-// --- Popup Component --- END
+// --- Restore Popup Component --- END
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings, text, analysisResult, englishData }) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ 
+  audioUrl, 
+  wordTimings, 
+  analysisResult 
+  // englishData 
+}) => {
+  // Restore State
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
   const playerRef = useRef<ReactPlayer>(null);
-  
-  // --- Popup State --- START
+
+  // Restore Popup State
   const [hoveredWordIndex, setHoveredWordIndex] = useState<number | null>(null);
   const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [popupData, setPopupData] = useState<any | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // --- Popup State --- END
 
-  // --- Add useEffect for Keyboard Events --- START
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Allow default behavior if focused on input fields, etc.
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-
-      if (event.code === 'Space') {
-        event.preventDefault(); // Prevent page scroll
-        setIsPlaying(prev => !prev);
-      } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
-        event.preventDefault();
-        if (!playerRef.current || wordTimings.length === 0) return;
-
-        // --- Revised Word Index Logic --- START
-        // Find the index of the last word that started at or before the current time
-        let currentWordIndex = wordTimings.findLastIndex(
-          timing => currentTime >= timing.start
-        );
-
-        // If findLastIndex returns -1 and currentTime > 0, it means we are past the last word
-        if (currentWordIndex === -1 && currentTime > 0) {
-           currentWordIndex = wordTimings.length -1; // Treat as being at the last word
-        } else if (currentWordIndex === -1) {
-           currentWordIndex = 0; // If time is before the first word start, treat as index 0 for nav
-        }
-        
-        console.log(`Arrow Key: currentTime=${currentTime.toFixed(2)}, foundIndex=${currentWordIndex}`); // DEBUG LOG
-
-        let targetWordIndex = -1;
-
-        if (event.code === 'ArrowLeft') {
-          // Go to the previous index, but not below 0
-          targetWordIndex = Math.max(0, currentWordIndex - 1);
-           // Special case: if already at the first word, pressing left again should seek to 0 time
-           if (currentWordIndex === 0 && targetWordIndex === 0 && currentTime > 0) {
-               playerRef.current.seekTo(0, 'seconds');
-               return; // Don't proceed further
-           }
-        } else if (event.code === 'ArrowRight') {
-          // Go to the next index, but not beyond the last word
-          targetWordIndex = Math.min(wordTimings.length - 1, currentWordIndex + 1);
-        }
-        // --- Revised Word Index Logic --- END
-
-        console.log(`Arrow Key: targetIndex=${targetWordIndex}`); // DEBUG LOG
-
-        if (targetWordIndex !== -1 && targetWordIndex < wordTimings.length) {
-          const targetTime = wordTimings[targetWordIndex].start;
-          console.log(`Arrow Key: Seeking to time=${targetTime.toFixed(2)} for word '${wordTimings[targetWordIndex].word}'`); // DEBUG LOG
-          playerRef.current.seekTo(targetTime, 'seconds');
-          if (!isPlaying) setIsPlaying(true); // Optionally start playing on seek
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    // Cleanup function
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-    // Add dependencies: wordTimings, isPlaying, currentTime
-  }, [wordTimings, isPlaying, currentTime]);
-  // --- Add useEffect for Keyboard Events --- END
-
-  // Find the current word based on playback time
-  const getCurrentWord = (time: number) => {
-    return wordTimings.find(
-      timing => time >= timing.start && time <= timing.end
-    );
+  // Restore Handlers
+  const handleReady = () => {
+    console.log('Player is ready.');
+    setIsPlayerReady(true);
   };
 
-  // Handle time updates
   const handleProgress = (state: { playedSeconds: number }) => {
+    // console.log(`Progress update: playedSeconds=${state.playedSeconds.toFixed(3)}`); // Keep commented out unless needed
     setCurrentTime(state.playedSeconds);
   };
 
-  // Handle duration change
   const handleDuration = (duration: number) => {
     setDuration(duration);
   };
 
-  // Handle word click
-  const handleWordClick = (index: number) => {
-    const timing = wordTimings[index];
-    if (playerRef.current && timing) {
-      console.log(`Clicked word index ${index}, pausing and seeking to: ${timing.start}`);
-      
-      // Pause, then seek, then resume
-      setIsPlaying(false); // Pause first
-      playerRef.current.seekTo(timing.start, 'seconds');
+  const handlePlay = () => setIsPlaying(true);
+  const handlePause = () => setIsPlaying(false);
+  const handleEnded = () => setIsPlaying(false);
 
-      // Use a small timeout to allow seek to register before resuming play
-      setTimeout(() => {
-        setIsPlaying(true);
-      }, 50); // Adjust delay if needed
-    }
-  };
-
-  // Format time as MM:SS
+  // Function to format time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // --- Helper function to clean word for matching --- START
-  const cleanWord = (word: string): string => {
-    // Convert to lowercase and remove common leading/trailing punctuation
-    return word.toLowerCase().replace(/^[¡¿.,!?;:]+|[¡¿.,!?;:]+$/g, '');
+  // --- Word Click Handler (Simplified Seek) ---
+  const handleWordClick = (index: number) => {
+    const timing = wordTimings[index];
+    if (playerRef.current && timing && isPlayerReady) {
+      console.log(`Clicked word index ${index}. Seeking to: ${timing.start}`);
+      playerRef.current.seekTo(timing.start, 'seconds');
+      // No need for pause/resume with blob URL hopefully
+    } else {
+      console.log(`Clicked word index ${index}, but player not ready or timing invalid.`);
+    }
   };
-  // --- Helper function to clean word for matching --- END
 
-  // --- Hover Handlers - Use analysisResult --- 
+  // --- Restore Hover Handlers --- START
+  // ... (Paste handleMouseEnter and handleMouseLeave functions here) ...
   const handleMouseEnter = (event: React.MouseEvent<HTMLSpanElement>, index: number) => {
-    setHoveredWordIndex(index);
-    // Clear any existing timer
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-
-    // Set a new timer
-    hoverTimerRef.current = setTimeout(() => {
-      // console.log('--- Popup Timer Fired ---'); 
-      // console.log('Hover Index (from wordTimings):', index);
-      // console.log('Analysis Result Available:', !!analysisResult);
-      
-      // --- Log the received analysisResult object structure --- START
-      // console.log('Inspecting analysisResult structure:', JSON.stringify(analysisResult, null, 2));
-      // --- Log the received analysisResult object structure --- END
-      
-      // --- Log first few tokens from analysis for comparison --- START
-      // if (analysisResult?.analysis_by_index) { ... } // Logs removed previously
-      // --- Log first few tokens from analysis for comparison --- END
-      
-      const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
-      const word = wordTimings[index]?.word || '(unknown word)'; // Get word from timings
-      if (!analysisEntry) {
-        console.warn(`No analysis entry found for index: ${index}`);
-        setPopupData({ error: 'Missing analysis data for word', word: word }); 
-      } else {
-        // Add type for id parameter
-        const annotations = analysisEntry.annotation_ids
-          .map((id: string) => analysisResult?.annotations?.[id])
-          .filter((ann): ann is AnalysisAnnotation => !!ann); 
-        
-        const popupInfo = {
-            analysisEntry: analysisEntry,
-            annotations: annotations,
-            word: analysisEntry.original_word || word 
-        };
-        setPopupData(popupInfo);
-      }
-
-      setPopupPosition({ x: event.clientX, y: event.clientY });
-      setIsPopupVisible(true);
-    }, 500); // 500ms delay
+     setHoveredWordIndex(index);
+     if (hoverTimerRef.current) {
+       clearTimeout(hoverTimerRef.current);
+     }
+     hoverTimerRef.current = setTimeout(() => {
+       // console logs removed previously
+       const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
+       const word = wordTimings[index]?.word || '(unknown word)'; 
+       if (!analysisEntry) {
+         console.warn(`No analysis entry found for index: ${index}`); 
+         setPopupData({ error: 'Missing analysis data for word', word: word }); 
+       } else {
+         const annotations = analysisEntry.annotation_ids
+           .map((id: string) => analysisResult?.annotations?.[id])
+           .filter((ann): ann is AnalysisAnnotation => !!ann); 
+         const popupInfo = { analysisEntry, annotations, word: analysisEntry.original_word || word };
+         setPopupData(popupInfo);
+       }
+       setPopupPosition({ x: event.clientX, y: event.clientY });
+       setIsPopupVisible(true);
+     }, 500);
   };
-
   const handleMouseLeave = () => {
-    setHoveredWordIndex(null);
-    // Clear the timer if the mouse leaves before 500ms
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-    // Hide the popup immediately on leave
-    setIsPopupVisible(false);
-    setPopupData(null);
+      setHoveredWordIndex(null);
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+      setIsPopupVisible(false);
+      setPopupData(null);
   };
-  // --- Hover Handlers - Use analysisResult --- END
-
-  // Split text into words and render with highlighting
+  // --- Restore Hover Handlers --- END
+  
+  // --- Restore Text Rendering --- START
+  // ... (Paste renderText function here) ...
   const renderText = () => {
-    // Find the index of the word where currentTime is strictly between start and end
-    let highlightIndex = wordTimings.findIndex(
+    let highlightIndex = wordTimings.findLastIndex(
       timing => currentTime >= timing.start && currentTime < timing.end
     );
-
-    // If in a gap or after the last word's end, find the last word that started
-    if (highlightIndex === -1 && wordTimings.length > 0 && currentTime > 0) {
+     if (highlightIndex === -1 && wordTimings.length > 0 && currentTime > 0) {
         const lastStartedIndex = wordTimings.findLastIndex(timing => currentTime >= timing.start);
-        // Ensure we don't highlight beyond the audio duration or before the first word
         if (lastStartedIndex !== -1 && currentTime <= duration ) {
              highlightIndex = lastStartedIndex;
         }
     }
 
     return wordTimings.map((timing, index) => {
-      const isCurrentWord = index === highlightIndex; 
-
-      // --- Get Annotation Classes --- 
+      const isCurrentWord = index === highlightIndex;
       let analysisClasses = '';
       const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
       if (analysisEntry && analysisEntry.annotation_ids.length > 0) {
         let associatedAnnotationTypes = new Set<string>();
-        // Add type for id parameter
         analysisEntry.annotation_ids.forEach((id: string) => {
           const annotation = analysisResult?.annotations?.[id];
-          if (annotation) {
-            associatedAnnotationTypes.add(annotation.type);
-          }
+          if (annotation) { associatedAnnotationTypes.add(annotation.type); }
         });
         analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
       }
-      // --- Get Annotation Classes --- 
 
       return (
         <span
@@ -376,20 +245,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
           onMouseEnter={(e) => handleMouseEnter(e, index)}
           onMouseLeave={handleMouseLeave}
           className={analysisClasses}
-          style={{
-            cursor: 'pointer',
-            color: isCurrentWord ? 'white' : '#1a1a1a',
-            transition: 'color 0.2s ease, background-color 0.2s ease',
-            fontSize: '16px',
-            lineHeight: '1.6',
-            fontWeight: isCurrentWord ? 'bold' : 'normal',
-            position: 'relative',
-            display: 'inline-block',
-            padding: '0 2px',
-            backgroundColor: isCurrentWord ? '#3b82f6' : hoveredWordIndex === index ? '#e0e0e0' : 'transparent', 
-            borderRadius: '4px',
-            minWidth: '1em',
-            textAlign: 'center',
+          style={{ /* ... existing styles ... */
+             cursor: 'pointer',
+             color: isCurrentWord ? 'white' : '#1a1a1a',
+             transition: 'color 0.2s ease, background-color 0.2s ease',
+             fontSize: '16px',
+             lineHeight: '1.6',
+             fontWeight: isCurrentWord ? 'bold' : 'normal',
+             position: 'relative',
+             display: 'inline-block',
+             padding: '0 2px',
+             backgroundColor: isCurrentWord ? '#3b82f6' : hoveredWordIndex === index ? '#e0e0e0' : 'transparent', 
+             borderRadius: '4px',
+             minWidth: '1em',
+             textAlign: 'center',
           }}
         >
           {timing.word}{' '}
@@ -397,24 +266,68 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
       );
     });
   };
+  // --- Restore Text Rendering --- END
+
+  // --- Restore Keyboard Controls --- START
+  // ... (Paste useEffect for handleKeyDown here) ...
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+       const target = event.target as HTMLElement;
+       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+         return;
+       }
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        setIsPlaying(prev => !prev); // Toggle playing state
+      } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+        event.preventDefault();
+        if (!playerRef.current || !isPlayerReady) return; // Check player ready state
+
+        let targetTime = -1;
+        const jumpAmount = 1;
+
+        if (event.code === 'ArrowLeft') {
+          targetTime = Math.max(0, currentTime - jumpAmount);
+          console.log(`Arrow Left: Seeking back ${jumpAmount}s to ${targetTime.toFixed(2)}`);
+        } else if (event.code === 'ArrowRight') {
+          targetTime = Math.min(duration, currentTime + jumpAmount); // Use duration state
+          console.log(`Arrow Right: Seeking forward ${jumpAmount}s to ${targetTime.toFixed(2)}`);
+        }
+
+        if (targetTime !== -1) {
+          playerRef.current.seekTo(targetTime, 'seconds'); 
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => { window.removeEventListener('keydown', handleKeyDown); };
+  }, [wordTimings, isPlaying, currentTime, isPlayerReady, duration]); // Add duration to dependencies
+  // --- Restore Keyboard Controls --- END
 
   return (
-    <div className="audio-player" /* Add onMouseLeave to main container if needed to catch rapid movements */ >
+    <div className="audio-player">
       <div className="player-controls">
         <ReactPlayer
           ref={playerRef}
-          url={audioUrl}
+          url={audioUrl} // Will be blob URL
           playing={isPlaying}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onProgress={handleProgress}
-          onDuration={handleDuration}
+          onReady={handleReady} 
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handleEnded}
+          onProgress={handleProgress} 
+          onDuration={handleDuration} 
           width="100%"
           height="50px"
-          controls={true} // Restore native controls
-          progressInterval={100}
+          controls={true} // Keep native controls
+          progressInterval={100} // Restore progress interval
         />
       </div>
+      
+      {/* Restore Debug Seek if needed, or remove */}
+      {/* <div className="debug-seek..."> ... </div> */}
+
       <div className="text-content" style={{ 
         marginTop: '20px',
         padding: '20px',
@@ -422,9 +335,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
         borderRadius: '8px',
         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
       }}>
-        {renderText()}
+        {renderText()} {/* Render the interactive text */}
       </div>
-      {/* Render the Popup */} 
+
+      {/* Restore Popup Rendering */} 
       {isPopupVisible && popupData && popupPosition && (
         <WordPopup data={popupData} position={popupPosition} />
       )}
