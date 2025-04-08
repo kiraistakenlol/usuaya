@@ -286,23 +286,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings,
 
     // Set a new timer
     hoverTimerRef.current = setTimeout(() => {
-      console.log('--- Popup Timer Fired ---'); 
-      console.log('Hover Index (from wordTimings):', index);
-      console.log('Analysis Result Available:', !!analysisResult);
+      // console.log('--- Popup Timer Fired ---'); 
+      // console.log('Hover Index (from wordTimings):', index);
+      // console.log('Analysis Result Available:', !!analysisResult);
       
       // --- Log the received analysisResult object structure --- START
-      console.log('Inspecting analysisResult structure:', JSON.stringify(analysisResult, null, 2));
+      // console.log('Inspecting analysisResult structure:', JSON.stringify(analysisResult, null, 2));
       // --- Log the received analysisResult object structure --- END
       
       // --- Log first few tokens from analysis for comparison --- START
-      if (analysisResult?.analysis_by_index) {
-        // Type the entry in map
-        console.log('First ~10 analysis_by_index entries:', 
-          Object.entries(analysisResult.analysis_by_index).slice(0, 10).map(([key, entry]: [string, AnalysisByIndexEntry]) => `"${entry.original_word}"`).join(', ')
-        );
-      } else {
-          console.log('analysisResult.analysis_by_index is missing or empty.');
-      }
+      // if (analysisResult?.analysis_by_index) { ... } // Logs removed previously
       // --- Log first few tokens from analysis for comparison --- END
       
       const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
