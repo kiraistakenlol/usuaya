@@ -2,6 +2,8 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
+import CreateTextForm from '@/components/CreateTextForm';
+import RelativeTimeDisplay from '@/components/RelativeTimeDisplay';
 
 // Interfaces (can be moved to a types file later)
 interface Phrase {
@@ -216,30 +218,7 @@ Hola
                                </h3>
                                <div className="flex items-center gap-2">
                                  <p className="text-sm text-gray-500">
-                                   {(() => {
-                                     try {
-                                       // Check if created_at exists
-                                       if (!text.created_at) {
-                                         return 'Date unavailable';
-                                       }
-                                       
-                                       // Parse the UTC timestamp from the backend
-                                       const date = new Date(text.created_at);
-                                       
-                                       // Format the date in local timezone
-                                       return date.toLocaleString(undefined, {
-                                         year: 'numeric',
-                                         month: 'numeric',
-                                         day: 'numeric',
-                                         hour: '2-digit',
-                                         minute: '2-digit',
-                                         hour12: true
-                                       });
-                                     } catch (error) {
-                                       console.error('Error parsing date:', error);
-                                       return 'Date unavailable';
-                                     }
-                                   })()}
+                                   <RelativeTimeDisplay dateString={text.created_at} />
                                  </p>
                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
