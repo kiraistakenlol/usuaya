@@ -250,54 +250,65 @@ export default function TextDetailPage() {
     }, [isPlayerReady, isPlaying, currentTime, duration]); // Dependencies updated
     // --- Interaction Handlers --- END ---
 
-    // --- Precompute Annotations by Word Index (with Instance Numbers & Multi-Instance Flag) --- START ---
+    // --- Precompute Annotations by Word Index (with Instance Numbers, Multi-Instance Flag, and Last-in-Scope Flag) --- START ---
     const processedAnnotationsByWordIndex = useMemo(() => {
-        const map = new Map<number, { annotation: AnalysisAnnotation; instanceNumber: number; typeHasMultipleInstances: boolean }[]>();
+        // Map key: word index. Value: Array of annotation details for that word.
+        const map = new Map<number, { 
+            annotation: AnalysisAnnotation; 
+            instanceNumber: number; 
+            typeHasMultipleInstances: boolean; 
+            isLastInScope: boolean; // New flag
+        }[]>();
         const annotations = text?.analysis_data?.analysis_result?.annotations;
         if (!annotations) return map;
 
-        const typeCounters: Record<string, number> = {}; // Track instance numbers per type
-        const typeMaxNumbers: Record<string, number> = {}; // Track max instance number per type
+        const typeCounters: Record<string, number> = {};
+        const typeMaxNumbers: Record<string, number> = {};
         const processedAnnotations: Record<string, AnalysisAnnotation & { instanceNumber: number }> = {};
 
         // First pass: Assign instance numbers and find max number per type
         Object.entries(annotations).forEach(([id, annotation]) => {
             const type = annotation.type || 'unknown';
-            if (!typeCounters[type]) {
-                typeCounters[type] = 0;
-            }
-            typeCounters[type]++;
+            typeCounters[type] = (typeCounters[type] || 0) + 1;
             const currentInstanceNumber = typeCounters[type];
             processedAnnotations[id] = {
                 ...annotation,
                 instanceNumber: currentInstanceNumber
             };
-            // Store the highest number encountered for this type
             typeMaxNumbers[type] = Math.max(typeMaxNumbers[type] || 0, currentInstanceNumber);
         });
 
-        // Second pass: Map indices to processed annotations including the flag
+        // Second pass: Map indices to processed annotations including flags
         Object.values(processedAnnotations).forEach(processedAnn => {
             const type = processedAnn.type || 'unknown';
             const typeHasMultiple = (typeMaxNumbers[type] || 0) > 1;
+            const scope = processedAnn.scope_indices;
 
-            if (processedAnn.scope_indices) {
-                processedAnn.scope_indices.forEach(index => {
+            if (scope && scope.length > 0) {
+                // Find the last index covered by this specific annotation instance
+                const maxIndexInScope = Math.max(...scope);
+                
+                scope.forEach(index => {
                     if (!map.has(index)) {
                         map.set(index, []);
                     }
+                    // Determine if the current index is the last one for this annotation's scope
+                    const isLast = index === maxIndexInScope;
+
                     map.get(index)?.push({ 
                         annotation: processedAnn, 
                         instanceNumber: processedAnn.instanceNumber, 
-                        typeHasMultipleInstances: typeHasMultiple // Add the flag
+                        typeHasMultipleInstances: typeHasMultiple, 
+                        isLastInScope: isLast // Add the new flag
                     });
                 });
             }
         });
 
-        // Sort annotations for each index (optional but good for consistency)
+        // Sort annotations for each index (optional)
         map.forEach((annotationsList) => {
             annotationsList.sort((a, b) => {
+                // Sort primarily to ensure badges appear consistently if multiple apply
                 if (a.annotation.type !== b.annotation.type) {
                     return a.annotation.type.localeCompare(b.annotation.type);
                 }
@@ -305,10 +316,10 @@ export default function TextDetailPage() {
             });
         });
 
-        console.log("Processed Annotations Map (with flags):", map); // Debugging
+        console.log("Processed Annotations Map (with scope flags):", map); // Debugging
         return map;
     }, [text?.analysis_data?.analysis_result?.annotations]);
-    // --- Precompute Annotations by Word Index (with Instance Numbers & Multi-Instance Flag) --- END ---
+    // --- Precompute Annotations by Word Index (...) --- END ---
 
      // --- Hover State --- START ---
      const [hoverHighlightIndices, setHoverHighlightIndices] = useState<Set<number>>(new Set());
@@ -430,9 +441,9 @@ export default function TextDetailPage() {
                            zIndex: 2, // Ensure badges are above underlines/backgrounds
                        }}
                     >
-                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber, typeHasMultipleInstances }, badgeIndex) => (
-                            // Only render the badge span if the type has multiple instances
-                            typeHasMultipleInstances && (
+                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber, typeHasMultipleInstances, isLastInScope }, badgeIndex) => (
+                            // Only render the badge span if the type has multiple instances AND this is the last word in its scope
+                            (typeHasMultipleInstances && isLastInScope) && (
                                 <span 
                                    key={`badge-${index}-${badgeIndex}`} 
                                    style={{
