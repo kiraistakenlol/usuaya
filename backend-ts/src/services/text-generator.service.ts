@@ -39,16 +39,18 @@ Output JSON Schema:
     "<input_index_as_string>": {
       "original_word": "<Input 'word'>",
       "lemma": "<Base/dictionary form>",
-      "pos": "<Part of Speech>",
-      "english_word_translation": "<Contextual English translation or null>",
-      "annotation_ids": ["<annotation_id_1>"]
+      "pos": "<Part of Speech (Coarse-grained, e.g., NOUN, VERB)>",
+      "tag": "<Part of Speech Tag (Fine-grained, depends on tagset, e.g., NNP, VBD)>",
+      "dep": "<Dependency Relation (e.g., nsubj, dobj, root)>",
+      "head_index": "<Index (number) of the syntactic head word, or -1 for root>",
+      "english_word_translation": "<Contextual English translation or null>"
     }
     // ... entry for EVERY index provided in the input array
   },
   "annotations": {
     "<unique_annotation_id>": {
       "type": "<Annotation type: 'slang', 'idiom', 'grammar', etc.>",
-      "scope_indices": [<input_index_1>, <input_index_2>], // Spanish indices this covers
+      "scope_indices": [<input_index_1>, <input_index_2>], // Spanish indices this covers (REQUIRED)
       "label": "<Short display label>",
       "explanation_spanish": "<Detailed explanation in Spanish>",
       "explanation_english": "<Detailed explanation in English>"
@@ -71,11 +73,10 @@ Output JSON Schema:
 Instructions:
 1.  Analyze EVERY Spanish segment from "indexed_word_segments". Create a corresponding entry in "analysis_by_index" keyed by the segment's "index" (as a string). Provide all required fields.
 2.  Identify annotations (slang, idioms, grammar). Create entries in "annotations". Ensure "scope_indices" uses the Spanish input indices.
-3.  Populate "annotation_ids" in "analysis_by_index" entries to link them to relevant "annotations".
-4.  Generate the full English translation.
-5.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
-6.  Create the ALIGNMENT map in "english_data.spanish_index_to_english_indices". For each Spanish input index (as a string key), provide an array of the 0-based **array indices** from the "english_data.tokens" array that correspond to it. If a Spanish word has no direct English equivalent, use an empty array \`[]\` for its alignment.
-7.  Ensure the output is a single, valid JSON object. Double-check that all Spanish input indices are keys in BOTH "analysis_by_index" AND "english_data.spanish_index_to_english_indices".
+3.  Generate the full English translation.
+4.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
+5.  Create the ALIGNMENT map in "english_data.spanish_index_to_english_indices". For each Spanish input index (as a string key), provide an array of the 0-based **array indices** from the "english_data.tokens" array that correspond to it. If a Spanish word has no direct English equivalent, use an empty array \`[]\` for its alignment.
+6.  Ensure the output is a single, valid JSON object. Double-check that all Spanish input indices are keys in BOTH "analysis_by_index" AND "english_data.spanish_index_to_english_indices".
 `;
   // --- Prompt for Call 2: Analyze Indexed Words --- END
 

@@ -24,7 +24,6 @@ export interface AnalysisByIndexEntry {
   pos: string;
   english_word_translation: string | null;
   russian_word_translation: string | null;
-  annotation_ids: string[]; // IDs linking to top-level annotations
 }
 
 // Output of Call 2

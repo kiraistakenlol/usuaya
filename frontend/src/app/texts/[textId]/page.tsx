@@ -19,12 +19,12 @@ interface Text {
 const API_URL = 'http://localhost:8000';
 
 export default function TextDetailPage() {
-    const params = useParams();
+  const params = useParams();
     const textId = params.textId as string;
 
-    const [text, setText] = useState<Text | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const [text, setText] = useState<Text | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
     const [audioError, setAudioError] = useState<string | null>(null);
     const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
@@ -42,7 +42,7 @@ export default function TextDetailPage() {
     // --- State moved from old AudioPlayer --- END ---
 
     // Effect to fetch text details
-    useEffect(() => {
+  useEffect(() => {
         if (!textId) return;
         setAudioBlobUrl(null);
         // Reset other states too
@@ -54,27 +54,27 @@ export default function TextDetailPage() {
         setHoveredWordIndex(null);
         setIsPopupVisible(false);
 
-        const fetchText = async () => {
-            setLoading(true);
-            setError(null);
+    const fetchText = async () => {
+      setLoading(true);
+      setError(null);
             setAudioError(null);
-            try {
-                const response = await fetch(`${API_URL}/texts/${textId}`);
-                if (!response.ok) {
+      try {
+        const response = await fetch(`${API_URL}/texts/${textId}`);
+        if (!response.ok) {
                     if (response.status === 404) throw new Error('Text not found');
                     else throw new Error('Failed to fetch text details');
-                }
-                const data: Text = await response.json();
+        }
+        const data: Text = await response.json();
                 console.log('Fetched text data (new structure):', data);
-                setText(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'An unknown error occurred');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchText();
+        setText(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchText();
     }, [textId]);
 
     // Effect to fetch audio blob when text is loaded
@@ -167,16 +167,18 @@ export default function TextDetailPage() {
         const timeout = setTimeout(() => {
             const analysisEntry = text?.analysis_data?.analysis_result?.analysis_by_index?.[String(index)];
             const word = text?.analysis_data?.word_timings?.[index]?.word || '(unknown word)';
-            if (!analysisEntry) {
-                console.warn(`No analysis entry found for index: ${index}`);
-                setPopupData({error: 'Missing analysis data for word', word: word});
-            } else {
-                const annotations = analysisEntry.annotation_ids
-                    .map((id: string) => text?.analysis_data?.analysis_result?.annotations?.[id])
-                    .filter((ann): ann is AnalysisAnnotation => !!ann);
-                const popupInfo = {analysisEntry, annotations, word: analysisEntry.original_word || word};
-                setPopupData(popupInfo);
-            }
+            
+            // Get annotations using the precomputed map
+            const annotations = annotationsByWordIndex.get(index) || [];
+
+            // Pass analysisEntry (if exists) and the found annotations
+            const popupInfo = {
+                analysisEntry: analysisEntry || undefined, // Pass entry if found
+                annotations: annotations, 
+                word: analysisEntry?.original_word || word // Use original word from entry if possible
+            };
+            setPopupData(popupInfo); 
+
             setPopupPosition({x: event.clientX, y: event.clientY});
             setIsPopupVisible(true);
         }, 500);
@@ -231,6 +233,26 @@ export default function TextDetailPage() {
     }, [isPlayerReady, isPlaying, currentTime, duration]); // Dependencies updated
     // --- Interaction Handlers --- END ---
 
+    // --- Precompute Annotations by Word Index --- START ---
+    const annotationsByWordIndex = useMemo(() => {
+        const map = new Map<number, AnalysisAnnotation[]>();
+        const annotations = text?.analysis_data?.analysis_result?.annotations;
+        if (!annotations) return map;
+
+        Object.values(annotations).forEach(annotation => {
+            if (annotation.scope_indices) {
+                annotation.scope_indices.forEach(index => {
+                    if (!map.has(index)) {
+                        map.set(index, []);
+                    }
+                    map.get(index)?.push(annotation);
+                });
+            }
+        });
+        return map;
+    }, [text?.analysis_data?.analysis_result?.annotations]);
+    // --- Precompute Annotations by Word Index --- END ---
+
     // --- Calculate Highlight Indices --- START ---
     // Calculate Spanish highlight index
     const highlightSpanishIndex = useMemo(() => {
@@ -265,12 +287,23 @@ export default function TextDetailPage() {
     // --- Render Functions --- START ---
     const renderSpanishText = () => {
         const wordTimings = text?.analysis_data?.word_timings;
-        const analysisResult = text?.analysis_data?.analysis_result;
+        // Use the precomputed map
+        // const analysisResult = text?.analysis_data?.analysis_result;
         if (!wordTimings) return <p>Loading Spanish text...</p>;
 
         return wordTimings.map((timing, index) => {
             const isCurrentWord = index === highlightSpanishIndex;
             let analysisClasses = '';
+            const annotationsForWord = annotationsByWordIndex.get(index);
+            
+            if (annotationsForWord && annotationsForWord.length > 0) {
+                let associatedAnnotationTypes = new Set<string>();
+                annotationsForWord.forEach(annotation => {
+                    associatedAnnotationTypes.add(annotation.type);
+                });
+                analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
+            }
+            /* Old logic using annotation_ids:
             const analysisEntry = analysisResult?.analysis_by_index?.[String(index)];
             if (analysisEntry && analysisEntry.annotation_ids.length > 0) {
                 let associatedAnnotationTypes = new Set<string>();
@@ -282,6 +315,7 @@ export default function TextDetailPage() {
                 });
                 analysisClasses = Array.from(associatedAnnotationTypes).map(type => `annotation-${type}`).join(' ');
             }
+            */
             return (
                 <span
                     key={`word-${index}`}
@@ -335,31 +369,31 @@ export default function TextDetailPage() {
     };
     // --- Render Functions --- END ---
 
-    return (
-        <>
-            <div className="mb-6">
-                <Link href="/texts" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    &larr; Back to All Texts
-                </Link>
-            </div>
+  return (
+    <>
+      <div className="mb-6">
+         <Link href="/texts" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+           &larr; Back to All Texts
+         </Link>
+      </div>
 
-            {loading && <p className="text-gray-500">Loading text...</p>}
-
-            {error && (
+      {loading && <p className="text-gray-500">Loading text...</p>}
+      
+      {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
                      role="alert">
-                    <strong className="font-bold">Error:</strong>
-                    <span className="block sm:inline"> {error}</span>
-                </div>
-            )}
+            <strong className="font-bold">Error:</strong>
+            <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
 
-            {text && !loading && !error && (
-                <div className="bg-white shadow rounded-md overflow-hidden">
-                    <div className="px-4 py-5 sm:p-6">
+      {text && !loading && !error && (
+        <div className="bg-white shadow rounded-md overflow-hidden">
+          <div className="px-4 py-5 sm:p-6">
                         <div className="flex justify-between items-start mb-4">
                             <h2 className="text-lg font-medium text-gray-900">
                                 Text Details
-                            </h2>
+             </h2>
                             <p className="text-sm text-gray-500">
                                 Created: {(() => {
                                 try {
@@ -411,8 +445,8 @@ export default function TextDetailPage() {
                                     onPause={handlePause}
                                     onEnded={handleEnded}
                                 />
-                            </div>
-                        )}
+                </div>
+             )}
 
                         {/* Spanish Text Block */}
                         {text.analysis_data?.word_timings && (
@@ -425,7 +459,7 @@ export default function TextDetailPage() {
                             }}>
                                 <h3 className="text-base font-semibold text-gray-700 mb-2">Spanish Text:</h3>
                                 <p style={{lineHeight: '1.6'}}>{renderSpanishText()}</p>
-                            </div>
+             </div>
                         )}
 
                         {/* English Translation Block */}
@@ -439,20 +473,20 @@ export default function TextDetailPage() {
                                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
                                 }}
                             >
-                                <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
+                <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
                                 <p className="text-gray-600" style={{lineHeight: '1.6'}}>
                                     {renderEnglishText()}
-                                </p>
-                            </div>
+                </p>
+             </div>
                         )}
 
                         {/* Popup Rendering */}
                         {isPopupVisible && popupData && popupPosition && (
                             <WordPopup data={popupData} position={popupPosition}/>
                         )}
-                    </div>
-                </div>
-            )}
-        </>
-    );
+          </div>
+        </div>
+      )}
+    </>
+  );
 } 

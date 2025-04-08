@@ -108,11 +108,11 @@ Let's break down the important parts inside `analysis_data`:
 *   **Relationship:** Linked to `word_timings` via the `index`.
 *   **Key Parts Inside `analysis_result`:**
     *   **a. `analysis_by_index` (Object):** Dictionary keyed by Spanish `index` (string). Value has info about *that specific Spanish word*.
-        *   **Structure Example (`"4"`):** `{ "original_word": "casa", "lemma": "casa", "pos": "noun", "english_word_translation": "house", "annotation_ids": [] }`
-        *   **Frontend Use:** Populates hover popups for Spanish words (lemma, POS, contextual translation), links to annotations.
+        *   **Structure Example (`"4"`):** `{ "original_word": "casa", "lemma": "casa", "pos": "noun", "english_word_translation": "house" }`
+        *   **Frontend Use:** Populates hover popups for Spanish words (lemma, POS, contextual translation). To find annotations for a word, the frontend now iterates through the main `annotations` object and checks if the word's index is in their `scope_indices`.
     *   **b. `annotations` (Object):** Dictionary keyed by unique `annotation_id`. Value describes a specific linguistic point (slang, grammar) potentially spanning multiple Spanish words.
         *   **Structure Example (`"ann1"`):** `{ "type": "grammar", "scope_indices": [0, 1], "label": "Voseo", "explanation_spanish": "...", "explanation_english": "..." }`
-        *   **Frontend Use:** Highlights words in `scope_indices`, displays explanations in popups.
+        *   **Frontend Use:** The `scope_indices` array directly links the annotation to the relevant word indices from `word_timings`. Used to highlight words and display explanations in popups.
 
 **3. `english_data` (Object)**
 
@@ -131,4 +131,4 @@ Let's break down the important parts inside `analysis_data`:
 *   **What it is:** The original generated Spanish text as a single string.
 *   **Frontend Use:** Primarily for reference or fallback display.
 
-By linking these structures—using the Spanish `index` to connect timings, Spanish analysis, and the alignment map, which in turn points to English token array indices—the frontend can provide a dynamic and informative learning interface with synchronized highlighting. 
+By linking these structures—using the Spanish `index` to connect timings, Spanish analysis (`analysis_by_index`), and the alignment map (`english_data`), while using `scope_indices` within the main `annotations` object to link linguistic points back to word indices—the frontend can provide a dynamic and informative learning interface with synchronized highlighting. 
