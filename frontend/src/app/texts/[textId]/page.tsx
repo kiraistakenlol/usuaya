@@ -305,19 +305,30 @@ export default function TextDetailPage() {
     // Calculate Spanish highlight index
     const highlightSpanishIndex = useMemo(() => {
         const wordTimings = text?.analysis_data?.word_timings;
-        if (!wordTimings || wordTimings.length === 0) return null;
+        // Prevent highlight at exact start or end
+        if (!wordTimings || wordTimings.length === 0 || currentTime === 0 || (duration > 0 && currentTime === duration)) {
+            return null;
+        }
 
+        // Find the index where currentTime falls within the word's start/end bounds
         let idx = wordTimings.findLastIndex(
             timing => currentTime >= timing.start && currentTime < timing.end
         );
+
+        // Fallback: If not within any word's bounds but playback has started,
+        // highlight the last word that has *started* playing.
         if (idx === -1 && currentTime > 0) {
-            const lastStartedIndex = wordTimings.findLastIndex(timing => currentTime >= timing.start);
-            if (lastStartedIndex !== -1 && currentTime <= duration) {
-                idx = lastStartedIndex;
-            } else {
-                idx = -1;
-            }
+             // Check if currentTime is past the start of the last word but not after duration
+             const lastWord = wordTimings[wordTimings.length - 1];
+             if (currentTime >= lastWord.start && currentTime < duration) { // Use < duration here
+                 idx = wordTimings.length - 1;
+             }
+             // If currentTime is exactly duration, the initial check handles it (returns null)
+             // If currentTime is somehow > duration, idx remains -1.
         }
+        
+        // Return the found index (or -1 if nothing should be highlighted based on logic)
+        // Convert -1 to null for easier checking later
         return idx !== -1 ? idx : null;
     }, [currentTime, duration, text?.analysis_data?.word_timings]);
 
