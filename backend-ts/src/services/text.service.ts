@@ -43,25 +43,23 @@ export class TextService {
       this.logger.log(`Step 3 Complete: Prepared ${indexedTimings.length} Indexed Timings`);
 
       // 4. Analyze Indexed Words
-      const analysisResult = await this.textGeneratorService.analyzeIndexedWords(indexedTimings);
-      const englishTranslation = analysisResult.english_translation_plain;
-      this.logger.log(`Step 4 Complete: Generated Analysis`);
+      const analysisDataFromClaude = await this.textGeneratorService.analyzeIndexedWords(indexedTimings);
+      this.logger.log(`Step 4 Complete: Generated Analysis and English Data`);
       
       // 5. Combine into final structure for Text entity's analysis_data
       const analysisData: TextAnalysisData = {
         spanish_plain: spanishText,
-        english_translation_plain: englishTranslation,
-        word_timings: indexedTimings, // Store the indexed version in analysis_data
-        analysis_result: analysisResult,
+        word_timings: indexedTimings, // Store the indexed version
+        analysis_result: analysisDataFromClaude.analysis_result, // Get from Claude response
+        english_data: analysisDataFromClaude.english_data,       // Get from Claude response
       };
 
       // 6. Create and save Text entity, linking the Audio entity
       const text = this.textRepository.create({
         spanish_text: spanishText, 
-        english_translation: englishTranslation, 
+        // english_translation: analysisData.english_data.plain, // Removed - No longer storing plain text this way
         analysis_data: analysisData, 
         audio: audioEntity, // Assign the full Audio entity to the relation
-        // audio_id: audioEntity.id // TypeORM handles this via the relation
       });
 
       console.log('Text entity object BEFORE final save:', JSON.stringify(text, null, 2));

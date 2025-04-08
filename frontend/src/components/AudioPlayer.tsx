@@ -11,6 +11,16 @@ export interface WordTiming {
   end: number;
   confidence: number;
 }
+
+// Add IndexedWordSegment definition
+export interface IndexedWordSegment {
+  index: number;
+  word: string;
+  start: number;
+  end: number;
+  confidence: number;
+}
+
 // Add missing/renamed interfaces back locally for now
 export interface AnalysisAnnotation {
   type: string;
@@ -18,28 +28,52 @@ export interface AnalysisAnnotation {
   label: string;
   explanation_spanish: string;
   explanation_english: string;
-  explanation_russian: string;
+  // explanation_russian: string; // Removed for now
 }
 export interface AnalysisByIndexEntry {
   original_word: string;
   lemma: string;
   pos: string;
   english_word_translation: string | null;
-  russian_word_translation: string | null;
+  // russian_word_translation: string | null; // Removed for now
   annotation_ids: string[]; 
 }
+
+// --- Add English Types (matching page.tsx) --- START
+export interface EnglishToken {
+  text: string;
+}
+
+export interface EnglishData {
+  tokens: EnglishToken[];
+  spanish_index_to_english_indices: Record<string, number[]>;
+}
+// --- Add English Types (matching page.tsx) --- END
+
 export interface AnalysisResult {
   analysis_by_index: Record<string, AnalysisByIndexEntry>; 
   annotations: Record<string, AnalysisAnnotation>;
-  english_translation_plain: string; 
+  // english_translation_plain: string; // Removed
 }
-// --- Restore Local Definitions --- START
+
+// --- Add TextAnalysisData (if not imported) --- START
+// This might be redundant if imported, but ensure it exists locally for props
+export interface TextAnalysisData {
+  spanish_plain: string;
+  word_timings: IndexedWordSegment[]; // Assuming IndexedWordSegment is defined/imported
+  analysis_result: AnalysisResult;
+  english_data: EnglishData; 
+}
+// --- Add TextAnalysisData (if not imported) --- END
+
+// --- Restore Local Definitions --- END
 
 interface AudioPlayerProps {
   audioUrl: string;
   wordTimings: WordTiming[];
-  text: string;
-  analysisResult: AnalysisResult | null; 
+  text: string; // This might be spanish_plain now? Let's leave as is for now.
+  analysisResult: AnalysisResult | null; // Type now matches page.tsx
+  englishData: EnglishData | null; // Add english_data separately for clarity
 }
 
 // --- Popup Component --- START (Simple placeholder for now)
@@ -97,7 +131,6 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
       <strong>{analysisEntry.original_word}</strong>
       <p><em>({analysisEntry.lemma}, {analysisEntry.pos})</em></p>
       {analysisEntry.english_word_translation && <p><strong>EN:</strong> {analysisEntry.english_word_translation}</p>}
-      {analysisEntry.russian_word_translation && <p><strong>RU:</strong> {analysisEntry.russian_word_translation}</p>}
       
       {safeAnnotations.length > 0 && <hr style={{margin: '12px 0'}} />}
       
@@ -106,7 +139,6 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
           <strong className="annotation-label">{ann.label} ({ann.type})</strong>
           <p><strong>ES:</strong> {ann.explanation_spanish}</p>
           <p><strong>EN:</strong> {ann.explanation_english}</p>
-          <p><strong>RU:</strong> {ann.explanation_russian}</p>
         </div>
       ))}
     </div>
@@ -114,7 +146,7 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
 };
 // --- Popup Component --- END
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings, text, analysisResult }) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, wordTimings, text, analysisResult, englishData }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);

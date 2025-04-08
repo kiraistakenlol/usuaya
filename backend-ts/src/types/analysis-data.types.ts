@@ -31,17 +31,14 @@ export interface AnalysisByIndexEntry {
 export interface AnalysisResult {
   analysis_by_index: Record<string, AnalysisByIndexEntry>; // Key is stringified input index
   annotations: Record<string, AnalysisAnnotation>;
-  english_translation_plain: string;
 }
 
 // Final structure stored in DB / sent to Frontend
 export interface TextAnalysisData {
   spanish_plain: string;
-  english_translation_plain: string;
-  // Store word timings with index for easy frontend use
   word_timings: IndexedWordSegment[]; 
-  // Store the result of the second analysis call
   analysis_result: AnalysisResult;
+  english_data: EnglishData;
 }
 
 // Re-export WordTiming if needed elsewhere, or define consistently
@@ -54,4 +51,17 @@ export interface WordTiming {
 
 // Remove old interfaces if no longer directly used
 // export interface AnalysisToken { ... }
-// export interface AnalysisData { ... } 
+// export interface AnalysisData { ... }
+
+// --- New English Data Types ---
+export interface EnglishToken {
+  // index_eng: number; // Removed - use array index
+  text: string;      // The English word/punctuation
+}
+
+export interface EnglishData {
+  tokens: EnglishToken[];
+  // plain: string;      // Removed - reconstruct from tokens if needed
+  spanish_index_to_english_indices: Record<string, number[]>; // Renamed. Map: Spanish index (string) -> Array of English token array indices
+}
+// --- New English Data Types --- 

@@ -5,10 +5,11 @@ import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 import { AudioPlayer } from '@/components/AudioPlayer';
 
+// Import central types (adjust path as needed)
+// import { AnalysisData, AnalysisToken, AnalysisAnnotation, WordTiming } from '@/types'; // Assuming a central @/types file
+
 // --- Use Final Data Structure Type --- START
-// Remove old definitions, assume types are central or defined in AudioPlayer
-// Import TextAnalysisData if centralizing types
-// For now, redefine locally based on backend
+// Redefine locally based on backend types
 export interface IndexedWordSegment {
   index: number;
   word: string;
@@ -19,11 +20,11 @@ export interface IndexedWordSegment {
 
 export interface AnalysisAnnotation {
   type: string;
-  scope_indices: number[]; // References input indices
+  scope_indices: number[];
   label: string;
   explanation_spanish: string;
   explanation_english: string;
-  explanation_russian: string;
+  // explanation_russian: string; // Removed for now
 }
 
 export interface AnalysisByIndexEntry {
@@ -31,32 +32,43 @@ export interface AnalysisByIndexEntry {
   lemma: string;
   pos: string;
   english_word_translation: string | null;
-  russian_word_translation: string | null;
-  annotation_ids: string[]; // IDs linking to top-level annotations
+  // russian_word_translation: string | null; // Removed for now
+  annotation_ids: string[];
 }
 
+// --- Add English Types --- START
+export interface EnglishToken {
+  text: string;
+}
+
+export interface EnglishData {
+  tokens: EnglishToken[];
+  spanish_index_to_english_indices: Record<string, number[]>;
+}
+// --- Add English Types --- END
+
 export interface AnalysisResult {
-  analysis_by_index: Record<string, AnalysisByIndexEntry>; // Key is stringified input index
+  analysis_by_index: Record<string, AnalysisByIndexEntry>;
   annotations: Record<string, AnalysisAnnotation>;
-  english_translation_plain: string; // Add missing field
+  // No english_translation_plain here
 }
 
 export interface TextAnalysisData {
   spanish_plain: string;
-  english_translation_plain: string;
   word_timings: IndexedWordSegment[];
   analysis_result: AnalysisResult;
+  english_data: EnglishData; // Added
 }
 // --- Use Final Data Structure Type --- END
 
 interface Text {
   id: string;
   spanish_text: string;
-  english_translation: string | null;
+  // english_translation: string | null; // Removed - use analysis_data.english_data.tokens
   analysis_data: TextAnalysisData | null;
-  audio_id: string | null; // Direct audio file ID
+  audio_id: string | null;
   created_at: string;
-  updated_at: string; // Added if available/needed
+  updated_at: string;
 }
 
 const API_URL = 'http://localhost:8000';
@@ -165,22 +177,26 @@ export default function TextDetailPage() {
                       wordTimings={text.analysis_data.word_timings}
                       text={text.analysis_data.spanish_plain}
                       analysisResult={text.analysis_data.analysis_result}
+                      englishData={text.analysis_data.english_data}
                     />
                 </div>
              )}
 
-             <div className="mb-6">
-                <h3 className="text-base font-semibold text-gray-700 mb-2">Spanish Content:</h3>
-                {/* Preserve whitespace and newlines from the stored text */}
-                <p className="text-gray-800 whitespace-pre-wrap">
-                   {text.spanish_text}
-                </p>
-             </div>
-
-             <div>
+             <div 
+                style={{
+                  marginTop: '20px',
+                  padding: '20px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '8px',
+                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                }}
+             >
                 <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
-                <p className="text-gray-600 italic">
-                   {text.english_translation || '(No translation available)'}
+                <p className="text-gray-600">
+                   {/* Reconstruct plain text from English tokens */}
+                   {text.analysis_data?.english_data?.tokens 
+                     ? text.analysis_data.english_data.tokens.map(token => token.text).join(' ') 
+                     : '(No translation available)'}
                 </p>
              </div>
           </div>

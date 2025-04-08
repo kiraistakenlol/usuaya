@@ -77,10 +77,10 @@ The main output stored in the `Text` table's `analysis_data` column is a single 
 
 ```json
 {
-  "word_timings": [ ... ],       // Timing for each word + index
+  "word_timings": [ ... ],       // Spanish word timings + sequential index
   "spanish_plain": "...",        // The original Spanish text
-  "analysis_result": { ... },    // Detailed analysis from Claude AI
-  "english_translation_plain": "..." // Overall English translation from Claude
+  "analysis_result": { ... },    // Detailed Spanish analysis from Claude AI
+  "english_data": { ... }        // Tokenized English text + alignment map
 }
 ```
 
@@ -88,71 +88,47 @@ Let's break down the important parts inside `analysis_data`:
 
 **1. `word_timings` (Array of Objects)**
 
-*   **What it is:** An ordered list where each object represents a single word (or punctuation treated as a word) from the generated Spanish text. It combines timing information from the audio engine (ElevenLabs) with a unique index.
-*   **Relationship:** This is the backbone for syncing audio and text. The `index` in each object links directly to the analysis data for that specific word.
+*   **What it is:** An ordered list where each object represents a single Spanish word/punctuation segment. It combines timing from audio with a unique sequential index.
+*   **Relationship:** Backbone for syncing audio and Spanish text. The `index` links to `analysis_result.analysis_by_index` and the keys in `english_data.spanish_index_to_english_indices`.
 *   **Structure Example:**
     ```typescript
     {
-      "index": 4,        // Unique, 0-based position of the word in the sequence. **Crucial Link** to analysis_by_index.
-      "word": "casa",    // The actual word as spoken in the audio.
-      "start": 0.778,    // When the word begins in the audio (in seconds). Used for audio seeking and highlight start.
-      "end": 1.033,      // When the word ends in the audio (in seconds). Used for highlight end.
-      "confidence": 1    // How confident the audio engine was about this word (0-1). (Currently informational)
+      "index": 4,        // 0-based position. **Crucial Link** to analysis & alignment.
+      "word": "casa",    // The Spanish word.
+      "start": 0.778,    // Start time in audio (seconds).
+      "end": 1.033,      // End time in audio (seconds).
+      "confidence": 1    // Audio engine confidence (0-1).
     }
     ```
-*   **Frontend Use:**
-    *   `start`, `end`: Used to highlight the `word` in the text when the audio playback time falls between these values.
-    *   `start`: When a `word` in the text is clicked, the audio player jumps (seeks) to this time.
-    *   `index`, `word`: Used to fetch the corresponding analysis when hovering over the word.
+*   **Frontend Use:** Highlights Spanish word based on `start`/`end`, seeks audio based on `start`, links to analysis/alignment via `index`.
 
 **2. `analysis_result` (Object)**
 
-*   **What it is:** Contains the detailed linguistic analysis performed by Claude AI.
-*   **Relationship:** This object holds the deeper understanding of the text. Its sub-parts are linked via the word `index` or specific `annotation_id`s.
+*   **What it is:** Contains the detailed linguistic analysis of the *Spanish* text.
+*   **Relationship:** Linked to `word_timings` via the `index`.
 *   **Key Parts Inside `analysis_result`:**
+    *   **a. `analysis_by_index` (Object):** Dictionary keyed by Spanish `index` (string). Value has info about *that specific Spanish word*.
+        *   **Structure Example (`"4"`):** `{ "original_word": "casa", "lemma": "casa", "pos": "noun", "english_word_translation": "house", "annotation_ids": [] }`
+        *   **Frontend Use:** Populates hover popups for Spanish words (lemma, POS, contextual translation), links to annotations.
+    *   **b. `annotations` (Object):** Dictionary keyed by unique `annotation_id`. Value describes a specific linguistic point (slang, grammar) potentially spanning multiple Spanish words.
+        *   **Structure Example (`"ann1"`):** `{ "type": "grammar", "scope_indices": [0, 1], "label": "Voseo", "explanation_spanish": "...", "explanation_english": "..." }`
+        *   **Frontend Use:** Highlights words in `scope_indices`, displays explanations in popups.
 
-    *   **a. `analysis_by_index` (Object)**
-        *   **What it is:** A dictionary where each key is a word's `index` (as a string, e.g., `"4"`) from the `word_timings` array. The value is an object containing information specifically about *that* word.
-        *   **Relationship:** Directly linked to `word_timings` via the `index`.
-        *   **Structure Example (for index "4"):**
-            ```typescript
-            "4": {
-              "original_word": "casa",   // The word exactly as it appeared at this index.
-              "lemma": "casa",         // The base or dictionary form of the word.
-              "pos": "noun",           // Part of Speech (e.g., 'verb', 'noun', 'adjective').
-              "english_word_translation": "house", // Contextual English translation for this word.
-              "annotation_ids": []       // List of IDs linking to any special 'annotations' that apply to this word. (Empty in this case).
-            }
-            ```
-        *   **Frontend Use:**
-            *   Provides the data for the hover popup when hovering over an individual word (lemma, POS, English translation).
-            *   `annotation_ids` tells the frontend if this word is part of a larger explained phenomenon (linking to `annotations`).
+**3. `english_data` (Object)**
 
-    *   **b. `annotations` (Object)**
-        *   **What it is:** A dictionary where each key is a unique `annotation_id` (e.g., `"ann1"`). The value describes a specific linguistic point (like slang, an idiom, or a grammar rule) that might span one or more words.
-        *   **Relationship:** Linked *from* `analysis_by_index[index].annotation_ids`. An annotation can apply to multiple words via its `scope_indices`.
-        *   **Structure Example:**
-            ```typescript
-            "ann1": {
-              "type": "grammar",        // Category (e.g., 'slang', 'idiom', 'grammar').
-              "scope_indices": [0, 1],  // The indices (from `word_timings`) that this annotation covers.
-              "label": "Voseo",         // A short title for the annotation.
-              "explanation_spanish": "El 'voseo' es un rasgo...", // Detailed explanation in Spanish.
-              "explanation_english": "The 'voseo' is a characteristic..." // Detailed explanation in English.
-            }
-            ```
-        *   **Frontend Use:**
-            *   `scope_indices`: Used to visually highlight all words belonging to this annotation when one of them is hovered.
-            *   `label`, `explanation_spanish`, `explanation_english`: Displayed in the popup when hovering over an annotated word/phrase.
+*   **What it is:** Contains the tokenized English translation and the map linking it back to the Spanish words.
+*   **Key Parts Inside `english_data`:**
+    *   **a. `tokens` (Array of Objects):** Ordered list representing the English translation, broken down into words/punctuation.
+        *   **Structure Example:** `[ { "text": "You" }, { "text": "know" }, { "text": "that" }, ... ]`
+        *   **Frontend Use:** Used to render the English text interactively. The array index of each token is used for highlighting via the alignment map.
+    *   **b. `spanish_index_to_english_indices` (Object):** The crucial alignment map.
+        *   **What it is:** Dictionary where keys are Spanish `index` values (from `word_timings`, as strings). Values are arrays of **array indices** corresponding to the `tokens` array above.
+        *   **Structure Example:** `{ "0": [0], "1": [1], "5": [3, 4], "19": [15], "20": [15], "21": [15] }` (e.g., Spanish word at index 5 maps to English tokens at array indices 3 and 4).
+        *   **Frontend Use:** When a Spanish word (index `i`) is highlighted (due to audio playback or hover), the frontend looks up `spanish_index_to_english_indices[String(i)]` and highlights the English tokens at the specified array indices.
 
-    *   **c. `english_translation_plain` (String)**
-        *   **What it is:** A plain text string containing the full, cohesive English translation of the entire generated Spanish text, as provided by Claude.
-        *   **Frontend Use:** Displayed alongside the Spanish text for reference.
-
-**3. `spanish_plain` (String)**
+**4. `spanish_plain` (String)**
 
 *   **What it is:** The original generated Spanish text as a single string.
-*   **Relationship:** This is the source text that was sent for audio generation and analysis. The `word_timings` array represents this text broken down word-by-word.
-*   **Frontend Use:** Primarily used as a fallback or for displaying the text if timings/analysis are somehow missing, though the interactive display relies on rendering from `word_timings`.
+*   **Frontend Use:** Primarily for reference or fallback display.
 
-By linking these structures—using the `index` to connect timings to per-word analysis, and `annotation_ids` to connect words to broader explanations—the frontend can provide a dynamic and informative learning interface. 
+By linking these structures—using the Spanish `index` to connect timings, Spanish analysis, and the alignment map, which in turn points to English token array indices—the frontend can provide a dynamic and informative learning interface with synchronized highlighting. 

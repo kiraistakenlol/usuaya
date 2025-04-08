@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-import { IndexedWordSegment, AnalysisResult, WordTiming } from '../types/analysis-data.types';
+import { IndexedWordSegment, AnalysisResult, TextAnalysisData, EnglishData } from '../types/analysis-data.types';
+import { WordTiming } from '../types/analysis-data.types';
 
 @Injectable()
 export class TextGeneratorService {
@@ -25,47 +26,56 @@ Output ONLY the generated Spanish text, with no other formatting, labels, or exp
 
   // --- Prompt for Call 2: Analyze Indexed Words --- START
   private readonly ANALYSIS_PROMPT = `
-You are a linguistic expert assistant specialized in Argentinian Spanish, English, and Russian. Your task is to analyze a sequence of indexed Spanish word segments provided as a JSON array named "indexed_word_segments". For each segment, you must provide linguistic analysis and translations. You also need to generate a cohesive English paragraph translating the entire sequence.
+You are a linguistic expert assistant specialized in Argentinian Spanish and English. Your task is to analyze a sequence of indexed Spanish word segments provided as a JSON array named "indexed_word_segments". For each segment, you must provide linguistic analysis (lemma, POS, contextual English translation). You also need to identify relevant annotations (slang, grammar, idioms). 
 
-Input Format: The user will provide a JSON object: { "indexed_word_segments": [ { "index": <number>, "word": "<string>", ...other keys ignored } ] }
+Critically, you must also provide a TOKENIZED English translation of the entire sequence (as an array of token objects) and an ALIGNMENT map linking each Spanish word index to the array indices of its corresponding English token(s).
+
+Input Format: The user will provide a JSON object: 
+{ "indexed_word_segments": [ { "index": <number>, "word": "<string>" } ] }
 
 Output JSON Schema:
 {
   "analysis_by_index": {
-    "<index_from_input_as_string>": {
-      "original_word": "<The 'word' value from the corresponding input object>",
-      "lemma": "<Base/dictionary form of the word>",
-      "pos": "<Part of Speech Tag>",
-      "english_word_translation": "<Contextual English translation of this specific word segment, or null>",
-      "russian_word_translation": "<Contextual Russian translation of this specific word segment, or null>",
+    "<input_index_as_string>": {
+      "original_word": "<Input 'word'>",
+      "lemma": "<Base/dictionary form>",
+      "pos": "<Part of Speech>",
+      "english_word_translation": "<Contextual English translation or null>",
       "annotation_ids": ["<annotation_id_1>"]
     }
-    // ... entry for every index provided in the input array
+    // ... entry for EVERY index provided in the input array
   },
   "annotations": {
     "<unique_annotation_id>": {
       "type": "<Annotation type: 'slang', 'idiom', 'grammar', etc.>",
-      "scope_indices": [<input_index_1>, <input_index_2>],
+      "scope_indices": [<input_index_1>, <input_index_2>], // Spanish indices this covers
       "label": "<Short display label>",
       "explanation_spanish": "<Detailed explanation in Spanish>",
-      "explanation_english": "<Detailed explanation in English>",
-      "explanation_russian": "<Detailed explanation in Russian>"
+      "explanation_english": "<Detailed explanation in English>"
     }
-    // ... more annotations
+    // ... more annotations if applicable
   },
-  "english_translation_plain": "<Full, cohesive English paragraph translating the entire sequence>"
+  "english_data": {
+    "tokens": [
+      { "text": "<English word/punctuation>" }
+      // ... entry for every token in the English translation
+    ],
+    "spanish_index_to_english_indices": {
+      "<input_index_as_string>": [0, 1]
+      // Map Spanish input index (string) to array of corresponding english_data.tokens.index_eng values
+      // EVERY Spanish input index MUST be a key here. Value can be [] if no direct alignment.
+    }
+  }
 }
 
-Instructions for Analysis:
-1. Process EVERY object in the input "indexed_word_segments" array. Create a corresponding entry in "analysis_by_index" using the input object's "index" (as a string) as the key.
-2. Within each "analysis_by_index" entry, provide the required fields ("original_word", "lemma", "pos", translations, "annotation_ids"). Analyze the segment including punctuation.
-3. Infer context from the sequence for better analysis.
-4. Identify annotations (slang, idioms, grammar, culture). Create entries in the top-level "annotations" dict.
-5. The "scope_indices" in each annotation MUST contain the input "index" values of all relevant segments.
-6. Populate the "annotation_ids" in "analysis_by_index" entries by linking to annotations that include the segment's input "index" in their "scope_indices".
-7. Provide detailed explanations in each annotation.
-8. Generate the overall English translation in "english_translation_plain".
-9. Ensure the output is a single, valid JSON object starting with { and ending with }. Verify all input indices are keys in "analysis_by_index".
+Instructions:
+1.  Analyze EVERY Spanish segment from "indexed_word_segments". Create a corresponding entry in "analysis_by_index" keyed by the segment's "index" (as a string). Provide all required fields.
+2.  Identify annotations (slang, idioms, grammar). Create entries in "annotations". Ensure "scope_indices" uses the Spanish input indices.
+3.  Populate "annotation_ids" in "analysis_by_index" entries to link them to relevant "annotations".
+4.  Generate the full English translation.
+5.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
+6.  Create the ALIGNMENT map in "english_data.spanish_index_to_english_indices". For each Spanish input index (as a string key), provide an array of the 0-based **array indices** from the "english_data.tokens" array that correspond to it. If a Spanish word has no direct English equivalent, use an empty array \`[]\` for its alignment.
+7.  Ensure the output is a single, valid JSON object. Double-check that all Spanish input indices are keys in BOTH "analysis_by_index" AND "english_data.spanish_index_to_english_indices".
 `;
   // --- Prompt for Call 2: Analyze Indexed Words --- END
 
@@ -95,7 +105,7 @@ Instructions for Analysis:
   // --- Method for Call 1 --- END
 
   // --- Method for Call 2 --- START
-  async analyzeIndexedWords(indexedWords: IndexedWordSegment[]): Promise<AnalysisResult> {
+  async analyzeIndexedWords(indexedWords: IndexedWordSegment[]): Promise<TextAnalysisData> {
     // Prepare the input for Claude
     const claudeInput = { indexed_word_segments: indexedWords };
     const userPrompt = `Please analyze the following indexed Spanish word segments and provide the full English translation:
@@ -139,24 +149,45 @@ ${JSON.stringify(claudeInput, null, 2)}
       console.log('--- Cleaned Response String for Parsing ---', cleanedJsonResponseString);
       // --- Clean the response string --- END
 
-      let analysisResult: AnalysisResult;
+      let parsedData: any; // Use 'any' temporarily for parsing
       try {
         // Parse the cleaned string
-        analysisResult = JSON.parse(cleanedJsonResponseString) as AnalysisResult;
-        console.log('--- Call 2 Parsed Result ---', JSON.stringify(analysisResult, null, 2));
+        parsedData = JSON.parse(cleanedJsonResponseString);
+        console.log('--- Call 2 Parsed Result (Raw) ---', JSON.stringify(parsedData, null, 2));
       } catch (parseError) {
         console.error('Failed to parse Claude Call 2 response as JSON:', parseError);
         console.error('Raw response was:', jsonResponseString);
         throw new Error('Failed to get valid JSON analysis from Claude Call 2.');
       }
       
-      // Basic validation (e.g., check if analysis_by_index exists)
-      if (!analysisResult?.analysis_by_index) {
-          console.error('Parsed analysis JSON missing required fields:', analysisResult);
+      // --- Validation and Type Casting --- START
+      if (!parsedData?.analysis_by_index || !parsedData?.english_data?.tokens || !parsedData?.english_data?.spanish_index_to_english_indices) {
+          console.error('Parsed analysis JSON missing required fields (analysis_by_index or english_data parts):', parsedData);
           throw new Error('Parsed analysis data from Call 2 is incomplete.');
       }
-
-      return analysisResult;
+      
+      // Construct the AnalysisResult part
+      const analysisResult: AnalysisResult = {
+          analysis_by_index: parsedData.analysis_by_index,
+          annotations: parsedData.annotations || {} // Ensure annotations object exists, even if empty
+      };
+      
+      // Construct the EnglishData part
+      const englishData: EnglishData = {
+          tokens: parsedData.english_data.tokens,
+          spanish_index_to_english_indices: parsedData.english_data.spanish_index_to_english_indices
+      };
+      
+      // Construct the final TextAnalysisData (excluding fields added by TextService)
+      const fullAnalysisData: Partial<TextAnalysisData> = {
+          analysis_result: analysisResult,
+          english_data: englishData
+      };
+      
+      // Return the combined structure expected by TextService (it will add spanish_plain and word_timings)
+      // We cast here because the method signature now returns TextAnalysisData
+      return fullAnalysisData as TextAnalysisData;
+      // --- Validation and Type Casting --- END
 
     } catch (error) {
       console.error('Error in Claude Call 2 (analyzeIndexedWords):', error);
