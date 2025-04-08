@@ -247,42 +247,52 @@ export default function TextDetailPage() {
     }, [isPlayerReady, isPlaying, currentTime, duration]); // Dependencies updated
     // --- Interaction Handlers --- END ---
 
-    // --- Precompute Annotations by Word Index (with Instance Numbers) --- START ---
+    // --- Precompute Annotations by Word Index (with Instance Numbers & Multi-Instance Flag) --- START ---
     const processedAnnotationsByWordIndex = useMemo(() => {
-        const map = new Map<number, { annotation: AnalysisAnnotation; instanceNumber: number }[]>();
+        const map = new Map<number, { annotation: AnalysisAnnotation; instanceNumber: number; typeHasMultipleInstances: boolean }[]>();
         const annotations = text?.analysis_data?.analysis_result?.annotations;
         if (!annotations) return map;
 
         const typeCounters: Record<string, number> = {}; // Track instance numbers per type
+        const typeMaxNumbers: Record<string, number> = {}; // Track max instance number per type
         const processedAnnotations: Record<string, AnalysisAnnotation & { instanceNumber: number }> = {};
 
-        // First pass: Assign instance numbers to each annotation
+        // First pass: Assign instance numbers and find max number per type
         Object.entries(annotations).forEach(([id, annotation]) => {
             const type = annotation.type || 'unknown';
             if (!typeCounters[type]) {
                 typeCounters[type] = 0;
             }
             typeCounters[type]++;
+            const currentInstanceNumber = typeCounters[type];
             processedAnnotations[id] = {
                 ...annotation,
-                instanceNumber: typeCounters[type]
+                instanceNumber: currentInstanceNumber
             };
+            // Store the highest number encountered for this type
+            typeMaxNumbers[type] = Math.max(typeMaxNumbers[type] || 0, currentInstanceNumber);
         });
 
-        // Second pass: Map indices to processed annotations
+        // Second pass: Map indices to processed annotations including the flag
         Object.values(processedAnnotations).forEach(processedAnn => {
+            const type = processedAnn.type || 'unknown';
+            const typeHasMultiple = (typeMaxNumbers[type] || 0) > 1;
+
             if (processedAnn.scope_indices) {
                 processedAnn.scope_indices.forEach(index => {
                     if (!map.has(index)) {
                         map.set(index, []);
                     }
-                    // Add the annotation with its instance number
-                    map.get(index)?.push({ annotation: processedAnn, instanceNumber: processedAnn.instanceNumber });
+                    map.get(index)?.push({ 
+                        annotation: processedAnn, 
+                        instanceNumber: processedAnn.instanceNumber, 
+                        typeHasMultipleInstances: typeHasMultiple // Add the flag
+                    });
                 });
             }
         });
 
-        // Sort annotations for each index by type then number for consistent display
+        // Sort annotations for each index (optional but good for consistency)
         map.forEach((annotationsList) => {
             annotationsList.sort((a, b) => {
                 if (a.annotation.type !== b.annotation.type) {
@@ -292,10 +302,10 @@ export default function TextDetailPage() {
             });
         });
 
-        console.log("Processed Annotations Map:", map); // For debugging
+        console.log("Processed Annotations Map (with flags):", map); // Debugging
         return map;
     }, [text?.analysis_data?.analysis_result?.annotations]);
-    // --- Precompute Annotations by Word Index (with Instance Numbers) --- END ---
+    // --- Precompute Annotations by Word Index (with Instance Numbers & Multi-Instance Flag) --- END ---
 
      // --- Hover State --- START ---
      const [hoverHighlightIndices, setHoverHighlightIndices] = useState<Set<number>>(new Set());
@@ -417,22 +427,25 @@ export default function TextDetailPage() {
                            zIndex: 2, // Ensure badges are above underlines/backgrounds
                        }}
                     >
-                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber }, badgeIndex) => (
-                            <span 
-                               key={`badge-${index}-${badgeIndex}`} 
-                               style={{
-                                   display: 'inline-block',
-                                   marginLeft: '1px', // Tiny space between badges
-                                   padding: '0px 3px',
-                                   fontSize: '9px',
-                                   fontWeight: 'bold',
-                                   color: '#fff',
-                                   borderRadius: '3px',
-                                   backgroundColor: getAnnotationTypeBadgeColor(annotation.type), 
-                               }}
-                            >
-                                {instanceNumber}
-                            </span>
+                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber, typeHasMultipleInstances }, badgeIndex) => (
+                            // Only render the badge span if the type has multiple instances
+                            typeHasMultipleInstances && (
+                                <span 
+                                   key={`badge-${index}-${badgeIndex}`} 
+                                   style={{
+                                       display: 'inline-block',
+                                       marginLeft: '1px', 
+                                       padding: '0px 3px',
+                                       fontSize: '9px',
+                                       fontWeight: 'bold',
+                                       color: '#fff',
+                                       borderRadius: '3px',
+                                       backgroundColor: getAnnotationTypeBadgeColor(annotation.type), 
+                                   }}
+                                >
+                                    {instanceNumber}
+                                </span>
+                            )
                         ))}
                     </span>
                     {' '}
