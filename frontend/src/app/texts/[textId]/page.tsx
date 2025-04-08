@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'next/navigation'; // Hook to get route params
 import Link from 'next/link'; // For back button
 import { AudioPlayer } from '@/components/AudioPlayer';
@@ -83,12 +83,14 @@ export default function TextDetailPage() {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null); // State for blob URL
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false); // State for audio fetch
+  const [activeSpanishIndex, setActiveSpanishIndex] = useState<number | null>(null); // State for active Spanish word index
 
   // Effect to fetch text details
   useEffect(() => {
     if (!textId) return; 
     // Reset blob URL when ID changes
     setAudioBlobUrl(null);
+    setActiveSpanishIndex(null); // Reset index when text changes
     const fetchText = async () => {
       setLoading(true);
       setError(null);
@@ -160,10 +162,26 @@ export default function TextDetailPage() {
 
   }, [text, audioBlobUrl, isAudioLoading]); // Dependencies
 
+  // Callback from AudioPlayer
+  const handleHighlightIndexChange = useCallback((index: number | null) => {
+    // console.log('Parent received highlight index:', index); // Debug if needed
+    setActiveSpanishIndex(index);
+  }, []);
+
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     console.error('Audio error reported by element:', e);
     setAudioError('Failed to load or play audio');
   };
+
+  // --- Calculate English Highlight Indices --- START
+  const englishHighlightIndices = useMemo(() => {
+    if (activeSpanishIndex === null || !text?.analysis_data?.english_data?.spanish_index_to_english_indices) {
+      return new Set<number>();
+    }
+    const indices = text.analysis_data.english_data.spanish_index_to_english_indices[String(activeSpanishIndex)];
+    return new Set(indices || []);
+  }, [activeSpanishIndex, text?.analysis_data?.english_data?.spanish_index_to_english_indices]);
+  // --- Calculate English Highlight Indices --- END
 
   return (
     <>
@@ -232,6 +250,7 @@ export default function TextDetailPage() {
                      audioUrl={audioBlobUrl}
                      wordTimings={text.analysis_data.word_timings}
                      analysisResult={text.analysis_data.analysis_result}
+                     onHighlightIndexChange={handleHighlightIndexChange} // Pass callback
                    />
                </div>
              )}
@@ -264,11 +283,26 @@ export default function TextDetailPage() {
                 }}
              >
                 <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
-                <p className="text-gray-600">
-                   {/* Reconstruct plain text from English tokens */}
-                   {text.analysis_data?.english_data?.tokens 
-                     ? text.analysis_data.english_data.tokens.map(token => token.text).join(' ') 
-                     : '(No translation available)'}
+                <p className="text-gray-600" style={{lineHeight: '1.6'}}> {/* Added line height for consistency */}
+                   {text.analysis_data?.english_data?.tokens && (
+                     text.analysis_data.english_data.tokens.map((token, index_eng) => {
+                       const isHighlighted = englishHighlightIndices.has(index_eng);
+                       return (
+                         <span 
+                           key={`eng-${index_eng}`}
+                           style={{
+                             backgroundColor: isHighlighted ? '#3b82f6' : 'transparent',
+                             color: isHighlighted ? 'white' : 'inherit',
+                             borderRadius: '4px',
+                             padding: '0 2px',
+                             transition: 'color 0.2s ease, background-color 0.2s ease',
+                           }}
+                         >
+                           {token.text}
+                         </span>
+                       );
+                     }).reduce((prev, curr, index) => <>{prev}{index > 0 ? ' ' : ''}{curr}</>, <></>)
+                   )}
                 </p>
              </div>
           </div>

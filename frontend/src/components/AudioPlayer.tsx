@@ -73,6 +73,7 @@ interface AudioPlayerProps {
   audioUrl: string; // Will receive blob URL
   wordTimings: WordTiming[];
   analysisResult: AnalysisResult | null;
+  onHighlightIndexChange: (index: number | null) => void; // Callback prop
   // englishData: EnglishData | null; // Add if needed for inline English highlighting
 }
 
@@ -122,8 +123,8 @@ const WordPopup: React.FC<WordPopupProps> = ({ data, position }) => {
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ 
   audioUrl, 
   wordTimings, 
-  analysisResult 
-  // englishData 
+  analysisResult,
+  onHighlightIndexChange // Destructure callback
 }) => {
   // Restore State
   const [currentTime, setCurrentTime] = useState(0);
@@ -131,6 +132,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const playerRef = useRef<ReactPlayer>(null);
+  const previousHighlightIndexRef = useRef<number | null>(null); // Ref to track previous index
 
   // Restore Popup State
   const [hoveredWordIndex, setHoveredWordIndex] = useState<number | null>(null);
@@ -215,15 +217,27 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   // --- Restore Text Rendering --- START
   // ... (Paste renderText function here) ...
   const renderText = () => {
-    let highlightIndex = wordTimings.findLastIndex(
+    // Calculate highlightIndex based on currentTime
+    let highlightIndex: number | null = wordTimings.findLastIndex(
       timing => currentTime >= timing.start && currentTime < timing.end
     );
-     if (highlightIndex === -1 && wordTimings.length > 0 && currentTime > 0) {
+    if (highlightIndex === -1 && wordTimings.length > 0 && currentTime > 0) {
         const lastStartedIndex = wordTimings.findLastIndex(timing => currentTime >= timing.start);
         if (lastStartedIndex !== -1 && currentTime <= duration ) {
              highlightIndex = lastStartedIndex;
+        } else {
+          highlightIndex = null; // Explicitly set to null if no word matches
         }
+    } else if (highlightIndex === -1) {
+      highlightIndex = null; // Explicitly set to null if index is -1 initially
     }
+
+    // --- Call callback if index changed --- START
+    if (highlightIndex !== previousHighlightIndexRef.current) {
+      onHighlightIndexChange(highlightIndex);
+      previousHighlightIndexRef.current = highlightIndex;
+    }
+    // --- Call callback if index changed --- END
 
     return wordTimings.map((timing, index) => {
       const isCurrentWord = index === highlightIndex;
@@ -285,7 +299,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         if (!playerRef.current || !isPlayerReady) return; // Check player ready state
 
         let targetTime = -1;
-        const jumpAmount = 1;
+        const jumpAmount = 2;
 
         if (event.code === 'ArrowLeft') {
           targetTime = Math.max(0, currentTime - jumpAmount);
