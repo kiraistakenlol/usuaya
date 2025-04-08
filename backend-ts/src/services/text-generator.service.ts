@@ -79,9 +79,10 @@ Output JSON Schema:
 Instructions:
 1.  Analyze EVERY Spanish segment from "indexed_word_segments". 
     Create a corresponding entry in 'analysis_by_index' keyed by the segment's "index" (as a string). Provide all required fields.
-2.  Determine the 'vocabulary_id' for each entry in 'analysis_by_index'.
-    The the entry in 'analysis_by_index' relates to any entry in 'vocabulary', assign corresponding 'vocabulary_id' property.
-    The goal is to be able to find entries that represent the use of 'vocabulary' in 'analysis_by_index'. 
+2.  Find the use of items in the 'vocabulary' in the 'indexed_word_segments' array.
+    a. Match might be not exact, but contextual, the important thing is to recognize if some set of words in 'indexed_word_segments' represent the use of an element from 'vocabulary'
+    b. Assign the matched vocabulary item's 'id' to the 'vocabulary_id' field for **all** 'analysis_by_index' entries corresponding to the words in the matched sequence.
+    d. If no match is found by phrase or single word, 'vocabulary_id' must be 'null'. 
 3.  Identify annotations (slang, idioms, grammar). Create entries in "annotations". Ensure "scope_indices" uses the Spanish input indices.
 4.  Generate the full English translation.
 5.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
@@ -127,7 +128,8 @@ ${JSON.stringify(llmInput, null, 2)}
 \`\`\`
 `;
 
-    this.logger.log('--- Calling LlmProvider.generateJsonResponse ---');
+    this.logger.log('--- Calling LlmProvider.generateJsonResponse --- ');
+    this.logger.debug('Vocabulary being sent:', JSON.stringify(llmInput.vocabulary, null, 2)); // Log the structured vocabulary
     // Log prompts if needed for debugging (can be verbose)
     // console.log('System Prompt:', this.ANALYSIS_PROMPT);
     // console.log('User Prompt (Input Data):', userPrompt);
