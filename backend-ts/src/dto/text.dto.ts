@@ -16,10 +16,6 @@ export class UpdateTextDto {
 
   @IsString()
   @IsOptional()
-  english_translation?: string;
-
-  @IsString()
-  @IsOptional()
   audio_file_id?: string;
 }
 
@@ -31,11 +27,6 @@ export class TextResponseDto {
   @IsString()
   @Expose()
   spanish_text: string;
-
-  @IsString()
-  @IsOptional()
-  @Expose()
-  english_translation: string | null;
 
   @IsOptional()
   @Expose()

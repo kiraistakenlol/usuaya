@@ -11,9 +11,6 @@ export class Text {
   @Column({ nullable: true })
   spanish_text: string;
 
-  @Column({ nullable: true })
-  english_translation: string;
-
   @Column({ type: 'jsonb', nullable: true })
   analysis_data: TextAnalysisData | null;
 

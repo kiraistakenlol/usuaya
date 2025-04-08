@@ -12,7 +12,6 @@ interface Phrase {
 interface Text {
   id: string;
   spanish_text: string;
-  english_translation: string | null;
   audio: {
     id: string;
     file_id: string;

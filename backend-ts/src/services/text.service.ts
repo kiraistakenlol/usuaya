@@ -78,8 +78,7 @@ export class TextService {
   async findAll(): Promise<Text[]> {
     this.logger.log('Finding all texts');
     return await this.textRepository.find({
-      // Select only needed fields for list view
-      select: ['id', 'spanish_text', 'english_translation', 'created_at', 'audio_id'],
+      select: ['id', 'spanish_text', 'created_at', 'audio_id'],
       order: {
         created_at: 'DESC'
       }
@@ -99,7 +98,6 @@ export class TextService {
         select: {
           id: true,
           spanish_text: true,
-          english_translation: true,
           analysis_data: true, // This contains the full TextAnalysisData structure
           audio_id: true, // The direct file ID
           created_at: true,
