@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 // Import shared analysis types from the central location
 import {AnalysisAnnotation, AnalysisByIndexEntry} from '@/types/analysis';
 
@@ -17,17 +17,80 @@ interface PopupData {
 
 interface WordPopupProps {
     data: PopupData | null;
-    position: { x: number; y: number };
+    position: { x: number; y: number } | null; // Allow null initial position
     onClose?: () => void; // Optional close handler
 }
 
 const WordPopup: React.FC<WordPopupProps> = ({data, position, onClose}) => {
-    if (!data) return null;
+    const popupRef = useRef<HTMLDivElement>(null); // Ref to measure the popup
+    // State to hold the final calculated position
+    const [adjustedPosition, setAdjustedPosition] = useState<{ x: number; y: number } | null>(null);
+    // State to control visibility after position calculation
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Effect to calculate adjusted position when data or initial position changes
+    useEffect(() => {
+        if (data && position && popupRef.current) {
+            const popupElement = popupRef.current;
+            const popupRect = popupElement.getBoundingClientRect(); // Get actual rendered size
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            const offsetX = 15; // Desired offset from cursor
+            const offsetY = 15;
+            const margin = 10; // Margin from viewport edges
+
+            let calculatedX = position.x + offsetX;
+            let calculatedY = position.y + offsetY;
+
+            // Adjust X position if going off-screen right
+            if (calculatedX + popupRect.width + margin > viewportWidth) {
+                // Try positioning to the left of the cursor
+                calculatedX = position.x - popupRect.width - offsetX;
+                // If it *still* goes off-screen left (small screens), clamp it
+                if (calculatedX < margin) {
+                   calculatedX = margin;
+                }
+            }
+            // Ensure it doesn't go off-screen left initially
+            if (calculatedX < margin) {
+                calculatedX = margin;
+            }
+
+            // Adjust Y position if going off-screen bottom
+            if (calculatedY + popupRect.height + margin > viewportHeight) {
+                // Try positioning above the cursor
+                calculatedY = position.y - popupRect.height - offsetY;
+                // If it *still* goes off-screen top, clamp it
+                if (calculatedY < margin) {
+                   calculatedY = margin;
+                }
+            }
+            // Ensure it doesn't go off-screen top initially
+             if (calculatedY < margin) {
+                calculatedY = margin;
+            }
+
+            setAdjustedPosition({ x: calculatedX, y: calculatedY });
+            setIsVisible(true); // Make visible after calculation
+        } else {
+            // Reset if data/position is removed
+             setAdjustedPosition(null);
+             setIsVisible(false);
+        }
+    }, [data, position]); // Re-calculate when data or initial mouse position changes
+
+    // If no data or position hasn't been calculated yet, don't render
+    if (!data || !position) return null;
 
     const popupStyle: React.CSSProperties = {
         position: 'fixed',
-        top: position.y + 15,
-        left: position.x + 15,
+        // Apply calculated position, start hidden/off-screen until calculation
+        top: adjustedPosition ? `${adjustedPosition.y}px` : '-9999px',
+        left: adjustedPosition ? `${adjustedPosition.x}px` : '-9999px',
+        visibility: isVisible ? 'visible' : 'hidden', // Control visibility
+        opacity: isVisible ? 1 : 0, // Optional: fade in
+        transition: 'opacity 0.1s ease-in-out', // Optional: fade transition
         backgroundColor: '#ffffff', // Ensure solid white background
         border: '1px solid #e0e0e0', // Lighter border
         borderRadius: '10px', // Slightly more rounded corners
@@ -255,7 +318,8 @@ const WordPopup: React.FC<WordPopupProps> = ({data, position, onClose}) => {
     };
 
     return (
-        <div style={popupStyle}>
+        // Add the ref to the main div
+        <div ref={popupRef} style={popupStyle}>
             <div style={headerStyle}>
                 <span style={wordStyle}>{data.word}</span>
                 {onClose && (
