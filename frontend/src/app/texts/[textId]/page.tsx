@@ -458,6 +458,9 @@ export default function TextDetailPage() {
         const englishTokens = text?.analysis_data?.english_data?.tokens;
         if (!englishTokens) return <p>Loading English text...</p>;
 
+        // Regex to match punctuation that shouldn't have a preceding space
+        const noPrecedingSpaceRegex = /^[.,!?;:')\]}]|^(?:'(?:s|ll|re|ve|d|m))|^n't/i;
+
         return englishTokens.map((token, index_eng) => {
             const isHighlighted = englishHighlightIndices.has(index_eng);
             return (
@@ -474,7 +477,12 @@ export default function TextDetailPage() {
           {token.text}
         </span>
             );
-        }).reduce((prev, curr, index) => <>{prev}{index > 0 ? ' ' : ''}{curr}</>, <></>);
+        }).reduce<React.ReactNode[]>((prev, curr, index) => {
+            const currentTokenText = curr.props.children as string;
+            // Add space only if it's not the first token AND current token doesn't start with attaching punctuation
+            const separator = (index > 0 && !noPrecedingSpaceRegex.test(currentTokenText)) ? ' ' : '';
+            return [...prev, separator, curr];
+        }, []).filter(node => node !== ''); // Filter out empty strings if any separator was empty
     };
 
     // Need to define getAnnotationTypeBadgeColor or import if moved
