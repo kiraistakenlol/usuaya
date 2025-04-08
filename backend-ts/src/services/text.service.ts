@@ -30,20 +30,30 @@ export class TextService {
 
       // 2. Generate Audio Entity (contains file_id and original timings)
       const audioEntity = await this.audioService.generateAudio(spanishText);
-      this.logger.log(`Step 2 Complete: Generated Audio Entity (ID: ${audioEntity.id}, FileID: ${audioEntity.file_id})`);
+      this.logger.log(`Step 2 Complete: Generated Audio Entity ID: ${audioEntity.id}, File ID: ${audioEntity.file_id}`);
 
-      // 3. Preprocess: Add index to timings from the Audio entity
+      // 3. Preprocess Timings (Add sequential index)
       if (!audioEntity.word_timings) {
         throw new Error('Word timings missing from generated audio entity.');
       }
+      // Revert to direct mapping to add index
       const indexedTimings: IndexedWordSegment[] = audioEntity.word_timings.map((timing, index) => ({
         ...timing,
         index: index,
       }));
       this.logger.log(`Step 3 Complete: Prepared ${indexedTimings.length} Indexed Timings`);
 
+      // Prepare structured vocabulary with IDs
+      const structuredVocabulary = createTextDto.vocabulary.map((word, index) => ({
+        id: `vocab_${index}`,
+        word: word
+      }));
+
       // 4. Analyze Indexed Words
-      const analysisDataFromClaude = await this.textGeneratorService.analyzeIndexedWords(indexedTimings);
+      const analysisDataFromClaude = await this.textGeneratorService.analyzeIndexedWords(
+        indexedTimings, 
+        structuredVocabulary // Pass structured vocab here
+      );
       this.logger.log(`Step 4 Complete: Generated Analysis and English Data`);
       
       // 5. Combine into final structure for Text entity's analysis_data

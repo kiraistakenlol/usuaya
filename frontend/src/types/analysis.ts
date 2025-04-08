@@ -24,6 +24,7 @@ export interface AnalysisByIndexEntry {
     dep: string;
     head_index: number;
     english_word_translation: string | null;
+    vocabulary_id?: string | null;
 }
 
 export interface EnglishToken {

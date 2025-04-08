@@ -24,6 +24,7 @@ export interface AnalysisByIndexEntry {
   pos: string;
   english_word_translation: string | null;
   russian_word_translation: string | null;
+  vocabulary_id?: string | null;
 }
 
 // Output of Call 2

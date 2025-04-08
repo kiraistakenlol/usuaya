@@ -12,6 +12,7 @@ import { PhraseService } from './services/phrase.service';
 import { TextGeneratorService } from './services/text-generator.service';
 import { AudioModule } from './modules/audio.module';
 import { join } from 'path';
+import { LlmModule } from './llm/llm.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { join } from 'path';
     }),
     TypeOrmModule.forFeature([Text, Phrase]),
     AudioModule,
+    LlmModule,
   ],
   controllers: [TextController, PhraseController, AudioController],
   providers: [TextService, PhraseService, TextGeneratorService],

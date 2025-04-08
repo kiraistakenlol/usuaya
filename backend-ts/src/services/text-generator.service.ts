@@ -1,17 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Anthropic from '@anthropic-ai/sdk';
+import { LlmProvider } from '../llm/llm-provider.interface';
 import { IndexedWordSegment, AnalysisResult, TextAnalysisData, EnglishData } from '../types/analysis-data.types';
 import { WordTiming } from '../types/analysis-data.types';
 
 @Injectable()
 export class TextGeneratorService {
-  private readonly anthropic: Anthropic;
+  private readonly logger = new Logger(TextGeneratorService.name);
 
-  constructor(private configService: ConfigService) {
-    this.anthropic = new Anthropic({
-      apiKey: this.configService.get<string>('ANTHROPIC_API_KEY'),
-    });
+  constructor(
+    private configService: ConfigService,
+    private llmProvider: LlmProvider
+  ) {
+    this.logger.log(`TextGeneratorService initialized with provider: ${llmProvider.constructor.name}`);
   }
 
   // --- Prompt for Call 1: Generate Spanish Text Only --- START
@@ -26,12 +27,19 @@ Output ONLY the generated Spanish text, with no other formatting, labels, or exp
 
   // --- Prompt for Call 2: Analyze Indexed Words --- START
   private readonly ANALYSIS_PROMPT = `
-You are a linguistic expert assistant specialized in Argentinian Spanish and English. Your task is to analyze a sequence of indexed Spanish word segments provided as a JSON array named "indexed_word_segments". For each segment, you must provide linguistic analysis (lemma, POS, contextual English translation). You also need to identify relevant annotations (slang, grammar, idioms). 
+You are a linguistic expert assistant specialized in Argentinian Spanish and English.
+Your task is to analyze a sequence of indexed Spanish word segments provided as a JSON array named "indexed_word_segments". 
+For each segment, you must provide linguistic analysis (lemma, POS, contextual English translation). 
+You also need to identify relevant annotations (slang, grammar, idioms, complex tenses use). 
 
-Critically, you must also provide a TOKENIZED English translation of the entire sequence (as an array of token objects) and an ALIGNMENT map linking each Spanish word index to the array indices of its corresponding English token(s).
+Critically, you must also provide a TOKENIZED English translation of the entire sequence (as an array of token objects) 
+and an ALIGNMENT map linking each Spanish word index to the array indices of its corresponding English token(s).
 
 Input Format: The user will provide a JSON object: 
-{ "indexed_word_segments": [ { "index": <number>, "word": "<string>" } ] }
+{ 
+  "indexed_word_segments": [ { "index": <number>, "word": "<string>" } ], // Note: This text was generated based on the vocabulary below.
+  "vocabulary": [ { "id": "<unique_vocab_id>", "word": "<string>" } ]
+}
 
 Output JSON Schema:
 {
@@ -40,10 +48,8 @@ Output JSON Schema:
       "original_word": "<Input 'word'>",
       "lemma": "<Base/dictionary form>",
       "pos": "<Part of Speech (Coarse-grained, e.g., NOUN, VERB)>",
-      "tag": "<Part of Speech Tag (Fine-grained, depends on tagset, e.g., NNP, VBD)>",
-      "dep": "<Dependency Relation (e.g., nsubj, dobj, root)>",
-      "head_index": "<Index (number) of the syntactic head word, or -1 for root>",
-      "english_word_translation": "<Contextual English translation or null>"
+      "english_word_translation": "<Contextual English translation or null>",
+      "vocabulary_id": "<matching_vocab_id_from_input | null>"
     }
     // ... entry for EVERY index provided in the input array
   },
@@ -71,127 +77,104 @@ Output JSON Schema:
 }
 
 Instructions:
-1.  Analyze EVERY Spanish segment from "indexed_word_segments". Create a corresponding entry in "analysis_by_index" keyed by the segment's "index" (as a string). Provide all required fields.
-2.  Identify annotations (slang, idioms, grammar). Create entries in "annotations". Ensure "scope_indices" uses the Spanish input indices.
-3.  Generate the full English translation.
-4.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
-5.  Create the ALIGNMENT map in "english_data.spanish_index_to_english_indices". For each Spanish input index (as a string key), provide an array of the 0-based **array indices** from the "english_data.tokens" array that correspond to it. If a Spanish word has no direct English equivalent, use an empty array \`[]\` for its alignment.
-6.  Ensure the output is a single, valid JSON object. Double-check that all Spanish input indices are keys in BOTH "analysis_by_index" AND "english_data.spanish_index_to_english_indices".
+1.  Analyze EVERY Spanish segment from "indexed_word_segments". 
+    Create a corresponding entry in 'analysis_by_index' keyed by the segment's "index" (as a string). Provide all required fields.
+2.  Determine the 'vocabulary_id' for each entry in 'analysis_by_index'.
+    The the entry in 'analysis_by_index' relates to any entry in 'vocabulary', assign corresponding 'vocabulary_id' property.
+    The goal is to be able to find entries that represent the use of 'vocabulary' in 'analysis_by_index'. 
+3.  Identify annotations (slang, idioms, grammar). Create entries in "annotations". Ensure "scope_indices" uses the Spanish input indices.
+4.  Generate the full English translation.
+5.  TOKENIZE the English translation accurately (including punctuation). Create an object containing only the "text" field for each token and place these objects in an array in "english_data.tokens".
+6.  Create the ALIGNMENT map in "english_data.spanish_index_to_english_indices". For each Spanish input index (as a string key), provide an array of the 0-based **array indices** from the "english_data.tokens" array that correspond to it. If a Spanish word has no direct English equivalent, use an empty array \'[]\' for its alignment.
+7.  Ensure the output is a single, valid JSON object. Double-check that all Spanish input indices are keys in BOTH "analysis_by_index" AND "english_data.spanish_index_to_english_indices".
+8.  Provide the fine-grained POS tag ('tag') for each word in 'analysis_by_index'.
 `;
   // --- Prompt for Call 2: Analyze Indexed Words --- END
 
   // --- Method for Call 1 --- START
   async generateSimpleText(vocabulary: string[]): Promise<string> {
     const userPrompt = `Generate a text incorporating the following vocabulary: ${vocabulary.join(', ')}`;
-    console.log('--- Call 1 User Prompt ---', userPrompt);
+    this.logger.log('--- Calling LlmProvider.generateText ---');
+    console.log('User Prompt:', userPrompt);
+    console.log('System Prompt:', this.SIMPLE_TEXT_PROMPT);
     try {
-      const msg = await this.anthropic.messages.create({
-        model: 'claude-3-7-sonnet-20250219', // Or Haiku for speed
-        max_tokens: 1000, // Lower max tokens needed for just text
-        temperature: 0.7,
-        system: this.SIMPLE_TEXT_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      });
-      const spanishText = msg.content[0]?.type === 'text' ? msg.content[0].text.trim() : '';
-      console.log('--- Call 1 Response (Spanish Text) ---', spanishText);
+      const spanishText = await this.llmProvider.generateText(userPrompt, this.SIMPLE_TEXT_PROMPT);
+      
+      console.log('--- LlmProvider.generateText Response ---', spanishText);
       if (!spanishText) {
-        throw new Error('Claude Call 1 did not return Spanish text.');
+        throw new Error('LLM Call 1 did not return Spanish text.');
       }
       return spanishText;
     } catch (error) {
-      console.error('Error in Claude Call 1 (generateSimpleText):', error);
-      throw new Error('Failed to generate initial Spanish text.');
+      this.logger.error('Error in generateSimpleText:', error);
+      throw new Error(`Failed to generate initial Spanish text using ${this.llmProvider.constructor.name}.`);
     }
   }
   // --- Method for Call 1 --- END
 
   // --- Method for Call 2 --- START
-  async analyzeIndexedWords(indexedWords: IndexedWordSegment[]): Promise<TextAnalysisData> {
-    // Prepare the input for Claude
-    const claudeInput = { indexed_word_segments: indexedWords };
-    const userPrompt = `Please analyze the following indexed Spanish word segments and provide the full English translation:
+  async analyzeIndexedWords(indexedWords: IndexedWordSegment[], vocabulary: { id: string; word: string; }[]): Promise<TextAnalysisData> {
+    // Prepare the input for the LLM
+    const llmInput = { 
+      indexed_word_segments: indexedWords,
+      vocabulary: vocabulary
+    };
+    // User prompt remains the same structure, asking for analysis based on the input data
+    const userPrompt = `Please analyze the following indexed Spanish word segments, considering the provided vocabulary, and provide the full English translation and analysis according to the specified JSON schema:
 
 \`\`\`json
-${JSON.stringify(claudeInput, null, 2)}
+${JSON.stringify(llmInput, null, 2)}
 \`\`\`
 `;
 
-    console.log('--- Call 2 System Prompt ---');
-    console.log(this.ANALYSIS_PROMPT);
-    console.log('--- Call 2 User Prompt (Input Data) ---');
-    console.log(userPrompt);
-    console.log('---------------------------------------');
+    this.logger.log('--- Calling LlmProvider.generateJsonResponse ---');
+    // Log prompts if needed for debugging (can be verbose)
+    // console.log('System Prompt:', this.ANALYSIS_PROMPT);
+    // console.log('User Prompt (Input Data):', userPrompt);
 
     try {
-      const msg = await this.anthropic.messages.create({
-        model: 'claude-3-7-sonnet-20250219', // Match model if needed, Opus might be better for analysis
-        max_tokens: 10000, // Keep high for potentially large JSON analysis
-        temperature: 0.7,
-        system: this.ANALYSIS_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      });
+      // Use the injected provider
+      const llmResponse = await this.llmProvider.generateJsonResponse(userPrompt, this.ANALYSIS_PROMPT);
 
-      const firstContentBlock = msg.content[0];
-      if (firstContentBlock?.type !== 'text') {
-        throw new Error('Claude Call 2 did not return text content.');
-      }
-      const jsonResponseString = firstContentBlock.text;
-      console.log('--- Call 2 Raw Response ---', jsonResponseString);
-
-      // --- Clean the response string --- START
-      let cleanedJsonResponseString = jsonResponseString.trim();
-      if (cleanedJsonResponseString.startsWith('```json')) {
-        cleanedJsonResponseString = cleanedJsonResponseString.substring(7); // Remove ```json
-      }
-      if (cleanedJsonResponseString.endsWith('```')) {
-        cleanedJsonResponseString = cleanedJsonResponseString.substring(0, cleanedJsonResponseString.length - 3); // Remove ```
-      }
-      cleanedJsonResponseString = cleanedJsonResponseString.trim(); // Trim again just in case
-      console.log('--- Cleaned Response String for Parsing ---', cleanedJsonResponseString);
-      // --- Clean the response string --- END
-
-      let parsedData: any; // Use 'any' temporarily for parsing
+      this.logger.log('--- LlmProvider.generateJsonResponse Raw Content ---', llmResponse.content); // Log raw content before parsing
+      
+      // JSON Parsing (Cleaning is now handled within providers, but parsing happens here)
+      let parsedData: any; 
       try {
-        // Parse the cleaned string
-        parsedData = JSON.parse(cleanedJsonResponseString);
-        console.log('--- Call 2 Parsed Result (Raw) ---', JSON.stringify(parsedData, null, 2));
+        parsedData = JSON.parse(llmResponse.content); 
+        // console.log('--- Parsed Result (Raw) ---', JSON.stringify(parsedData, null, 2)); // Optional deep log
       } catch (parseError) {
-        console.error('Failed to parse Claude Call 2 response as JSON:', parseError);
-        console.error('Raw response was:', jsonResponseString);
-        throw new Error('Failed to get valid JSON analysis from Claude Call 2.');
+        this.logger.error('Failed to parse LLM Call 2 response as JSON:', parseError);
+        this.logger.error('Raw response was:', llmResponse.content); 
+        throw new Error('Failed to get valid JSON analysis from LLM Call 2.');
       }
       
-      // --- Validation and Type Casting --- START
+      // --- Validation and Type Casting (Remains the same) --- START
       if (!parsedData?.analysis_by_index || !parsedData?.english_data?.tokens || !parsedData?.english_data?.spanish_index_to_english_indices) {
-          console.error('Parsed analysis JSON missing required fields (analysis_by_index or english_data parts):', parsedData);
+          this.logger.error('Parsed analysis JSON missing required fields:', parsedData);
           throw new Error('Parsed analysis data from Call 2 is incomplete.');
       }
       
-      // Construct the AnalysisResult part
       const analysisResult: AnalysisResult = {
           analysis_by_index: parsedData.analysis_by_index,
-          annotations: parsedData.annotations || {} // Ensure annotations object exists, even if empty
+          annotations: parsedData.annotations || {} 
       };
       
-      // Construct the EnglishData part
       const englishData: EnglishData = {
           tokens: parsedData.english_data.tokens,
           spanish_index_to_english_indices: parsedData.english_data.spanish_index_to_english_indices
       };
       
-      // Construct the final TextAnalysisData (excluding fields added by TextService)
       const fullAnalysisData: Partial<TextAnalysisData> = {
           analysis_result: analysisResult,
           english_data: englishData
       };
       
-      // Return the combined structure expected by TextService (it will add spanish_plain and word_timings)
-      // We cast here because the method signature now returns TextAnalysisData
       return fullAnalysisData as TextAnalysisData;
       // --- Validation and Type Casting --- END
 
     } catch (error) {
-      console.error('Error in Claude Call 2 (analyzeIndexedWords):', error);
+      this.logger.error(`Error in analyzeIndexedWords using ${this.llmProvider.constructor.name}:`, error);
       throw new Error('Failed to generate text analysis.');
     }
   }
