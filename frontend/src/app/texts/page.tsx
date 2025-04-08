@@ -131,13 +131,13 @@ export default function TextsPage() {
 
       {/* --- Create New Text Section --- */}
       <div className="mb-12 p-6 bg-white shadow rounded-md">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">Create New Text</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">Create New</h2>
         <form onSubmit={handleGenerateText}>
           {/* Grid for inputs */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
             {/* Vocabulary Selection - Changed to scrollable list */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Add Word from Vocabulary (Click to add):
               </label>
               {loadingVocab ? (
@@ -166,8 +166,8 @@ export default function TextsPage() {
             </div>
 
             {/* Manual Input Area */}
-            <div>
-              <label htmlFor="manual-input" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <label htmlFor="manual-input" className="block text-sm font-medium text-gray-700 mb-2">
                 Vocabulary for New Text (one per line):
               </label>
               <textarea
@@ -201,7 +201,7 @@ Hola
 
       {/* --- List of Existing Texts --- */}
       <div className="p-6 bg-white shadow rounded-md">
-         <h2 className="text-xl font-semibold mb-4 text-gray-700">Generated Texts</h2>
+         <h2 className="text-xl font-semibold mb-4 text-gray-700">My Texts</h2>
          {loadingTexts ? (
              <p className="text-gray-500">Loading texts...</p>
          ) : texts.length > 0 ? (
