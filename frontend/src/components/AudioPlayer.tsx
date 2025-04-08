@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, forwardRef, useImperativeHandle} from 'react';
 import ReactPlayer from 'react-player';
 
 // Props required by the player itself
@@ -13,18 +13,47 @@ interface AudioPlayerProps {
     onEnded: () => void;
 }
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({
-                                                            audioUrl,
-                                                            targetSeekTime,
-                                                            onTimeUpdate,
-                                                            onDurationChange,
-                                                            onReady,
-                                                            onPlay,
-                                                            onPause,
-                                                            onEnded,
-                                                        }) => {
+// Define the interface for the actions exposed by the ref
+export interface AudioPlayerActions {
+    togglePlayPause: () => void;
+}
+
+const AudioPlayer = forwardRef<AudioPlayerActions, AudioPlayerProps>((
+    {
+        audioUrl,
+        targetSeekTime,
+        onTimeUpdate,
+        onDurationChange,
+        onReady,
+        onPlay,
+        onPause,
+        onEnded
+    },
+    ref // The forwarded ref
+) => {
     const playerRef = useRef<ReactPlayer>(null);
     const [isPlayerReadyInternal, setIsPlayerReadyInternal] = useState(false);
+    const lastReportedTimeRef = useRef<number>(0);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // --- Imperative Handle: Expose togglePlayPause --- START ---
+    useImperativeHandle(ref, () => ({
+        togglePlayPause: () => {
+            const internalPlayer = playerRef.current?.getInternalPlayer();
+            if (internalPlayer && typeof (internalPlayer as any).play === 'function' && typeof (internalPlayer as any).pause === 'function') {
+                if ((internalPlayer as HTMLAudioElement).paused) {
+                    console.log("[Ref Method] Calling play() on internal player");
+                    (internalPlayer as HTMLAudioElement).play().catch(err => console.error("Play error:", err));
+                } else {
+                    console.log("[Ref Method] Calling pause() on internal player");
+                    (internalPlayer as HTMLAudioElement).pause();
+                }
+            } else {
+                console.warn("Could not get internal player or play/pause methods.");
+            }
+        }
+    }), []); // Dependencies: none needed here usually
+    // --- Imperative Handle: Expose togglePlayPause --- END ---
 
     // Effect to handle seek commands from parent
     useEffect(() => {
@@ -69,4 +98,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             />
         </div>
     );
-}; 
+});
+
+export default AudioPlayer; 

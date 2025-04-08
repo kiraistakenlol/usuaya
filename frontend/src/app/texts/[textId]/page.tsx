@@ -3,7 +3,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
 import Link from 'next/link';
-import {AudioPlayer} from '@/components/AudioPlayer';
+import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
 import WordPopup from '@/components/WordPopup';
 import {AnalysisAnnotation, TextAnalysisData} from '@/types/analysis';
 
@@ -39,6 +39,8 @@ export default function TextDetailPage() {
     const [popupData, setPopupData] = useState<any | null>(null);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
     const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+    // Ref for Audio Player control
+    const audioPlayerRef = useRef<AudioPlayerActions>(null);
     // --- State moved from old AudioPlayer --- END ---
 
     // Effect to fetch text details
@@ -214,12 +216,13 @@ export default function TextDetailPage() {
 
             if (event.code === 'Space') {
                 event.preventDefault();
-                // We need a way to tell the player to toggle
-                // For now, maybe just update state? Player callbacks handle sync
+                console.log("Spacebar pressed, calling togglePlayPause via ref");
+                // Call the method exposed by the AudioPlayer component via the ref
+                audioPlayerRef.current?.togglePlayPause();
+                /* Old logic setting state - REMOVED
                 setIsPlaying(prev => !prev);
-                // TODO: This won't directly control the player if user used native controls
-                // Need a ref to player or dedicated play/pause prop? Let's stick with native for now.
                 console.warn("Spacebar toggles state, but relies on player callbacks/native controls");
+                */
             } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
                 event.preventDefault();
                 if (!isPlayerReady) return;
@@ -573,6 +576,7 @@ export default function TextDetailPage() {
                         {audioBlobUrl && text.analysis_data && (
                             <div className="mt-4">
                                 <AudioPlayer
+                                    ref={audioPlayerRef}
                                     audioUrl={audioBlobUrl}
                                     targetSeekTime={targetSeekTime}
                                     onTimeUpdate={handleTimeUpdate}
