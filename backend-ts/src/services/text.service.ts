@@ -48,6 +48,8 @@ export class TextService {
         id: `vocab_${index}`,
         word: word
       }));
+      // Log the structured vocabulary before assigning it
+      this.logger.debug('Structured Vocabulary prepared:', JSON.stringify(structuredVocabulary, null, 2));
 
       // 4. Analyze Indexed Words
       const analysisDataFromClaude = await this.textGeneratorService.analyzeIndexedWords(
@@ -65,15 +67,21 @@ export class TextService {
       };
 
       // 6. Create and save Text entity, linking the Audio entity
-      const text = this.textRepository.create({
-        spanish_text: spanishText, 
-        analysis_data: analysisData,
-        audio: audioEntity, // Assign the full Audio entity to the relation
+      const textEntity = this.textRepository.create({
+        spanish_text: spanishText,
+        analysis_data: {
+          spanish_plain: spanishText,
+          word_timings: indexedTimings,
+          analysis_result: analysisDataFromClaude.analysis_result,
+          english_data: analysisDataFromClaude.english_data,
+        },
+        audio: audioEntity, // Link the generated audio entity
+        original_vocabulary: structuredVocabulary, // Save the structured vocabulary
       });
 
-      console.log('Text entity object BEFORE final save:', JSON.stringify(text, null, 2));
+      console.log('Text entity object BEFORE final save:', JSON.stringify(textEntity, null, 2));
 
-      const savedText = await this.textRepository.save(text);
+      const savedText = await this.textRepository.save(textEntity);
       this.logger.log(`Step 6 Complete: Text saved with ID: ${savedText.id}`);
 
       return savedText;
@@ -109,6 +117,7 @@ export class TextService {
           id: true,
           spanish_text: true,
           analysis_data: true, // This contains the full TextAnalysisData structure
+          original_vocabulary: true, // Select the vocabulary
           audio_id: true, // The direct file ID
           created_at: true,
           updated_at: true,

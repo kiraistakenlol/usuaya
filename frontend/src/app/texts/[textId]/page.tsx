@@ -11,6 +11,7 @@ interface Text {
     id: string;
     spanish_text: string;
     analysis_data: TextAnalysisData | null;
+    original_vocabulary: { id: string; word: string; }[] | null;
     audio_id: string | null;
     created_at: string;
     updated_at: string;
@@ -378,6 +379,10 @@ export default function TextDetailPage() {
             const isCurrentWord = index === highlightSpanishIndex;
             const annotationsForWord = processedAnnotationsByWordIndex.get(index);
             const isHoverHighlighted = hoverHighlightIndices.has(index);
+            // Get the analysis entry for this word index
+            const analysisEntry = text?.analysis_data?.analysis_result?.analysis_by_index?.[String(index)];
+            // Check if this word was derived from the original vocabulary
+            const isFromVocabulary = !!analysisEntry?.vocabulary_id;
 
             // Determine background color
             let backgroundColor = 'transparent';
@@ -415,7 +420,8 @@ export default function TextDetailPage() {
                             transition: 'color 0.2s ease, background-color 0.2s ease',
                             fontSize: '16px',
                             lineHeight: '1.6',
-                            fontWeight: isCurrentWord ? 'bold' : 'normal',
+                            // Apply bold if it's a vocabulary word OR the current playback word
+                            fontWeight: isCurrentWord || isFromVocabulary ? 'bold' : 'normal',
                             // position: 'relative', // Moved to wrapper span
                             display: 'inline-block',
                             padding: '0 2px',
@@ -630,6 +636,28 @@ export default function TextDetailPage() {
                                     {renderEnglishText()}
                 </p>
              </div>
+                        )}
+
+                        {/* Display Original Vocabulary */} 
+                        {text.original_vocabulary && text.original_vocabulary.length > 0 && (
+                            <div 
+                                style={{
+                                    marginTop: '20px',
+                                    padding: '15px 20px',
+                                    backgroundColor: '#e9ecef', // Slightly different background
+                                    borderRadius: '8px',
+                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+                                }}
+                            >
+                                <h3 className="text-base font-semibold text-gray-700 mb-3">Vocabulary Used:</h3>
+                                <ul className="list-disc list-inside text-sm text-gray-600">
+                                    {text.original_vocabulary.map(item => (
+                                        <li key={item.id} className="mb-1">
+                                            {item.word}
+                                        </li>
+                                    ))}
+                                </ul>
+                           </div>
                         )}
 
                         {/* Popup Rendering */}

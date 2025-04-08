@@ -3,6 +3,17 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { AudioResponseDto } from './audio.dto';
 import { TextAnalysisData } from '../types/analysis-data.types';
 
+// Define a simple class for vocabulary items
+export class VocabularyItemDto {
+  @IsString()
+  @Expose()
+  id: string;
+
+  @IsString()
+  @Expose()
+  word: string;
+}
+
 export class CreateTextDto {
   @IsArray()
   @IsString({ each: true })
@@ -31,6 +42,12 @@ export class TextResponseDto {
   @IsOptional()
   @Expose()
   analysis_data: TextAnalysisData | null;
+
+  @IsArray()
+  @IsOptional()
+  @Expose()
+  @Type(() => VocabularyItemDto)
+  original_vocabulary: VocabularyItemDto[] | null;
 
   @IsUUID()
   @IsOptional()

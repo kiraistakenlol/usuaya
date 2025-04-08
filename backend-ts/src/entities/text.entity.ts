@@ -14,6 +14,10 @@ export class Text {
   @Column({ type: 'jsonb', nullable: true })
   analysis_data: TextAnalysisData | null;
 
+  // Store the original vocabulary used for generation (structured with IDs)
+  @Column({ type: 'jsonb', nullable: true })
+  original_vocabulary: { id: string; word: string; }[] | null;
+
   @OneToOne(() => Audio, audio => audio.text, { cascade: true, nullable: true })
   @JoinColumn({ name: 'audio_id' })
   audio: Audio | null;
