@@ -19,7 +19,6 @@ export class TextGeneratorService {
   private readonly SIMPLE_TEXT_PROMPT = `
 You are an AI assistant helping a Russian person living in Argentina learn Spanish. They are fluent in English.
 Generate a short, cohesive story or conversational text in Argentinian Spanish (using 'vos' conjugation, local slang where appropriate and natural). 
-**Please keep the text short, around 2 sentences long, but try to include some interesting grammar or phrasing.**
 The text MUST incorporate the vocabulary words/phrases provided by the user.
 Output ONLY the generated Spanish text, with no other formatting, labels, or explanation.
 `;
