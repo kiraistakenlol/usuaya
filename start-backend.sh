@@ -4,6 +4,7 @@
 set -e # Exit on error
 
 BACKEND_PID_FILE="backend.pid"
+BACKEND_LOG_FILE="backend.log"
 BACKEND_PORT=8000
 
 echo "--- Attempting to restart backend --- "
@@ -37,7 +38,10 @@ if check_port "$BACKEND_PORT"; then
 fi
 
 # --- Start new backend process ---
-echo "Starting new backend process (logging to terminal)..."
+# Clear previous log file
+> "$BACKEND_LOG_FILE"
+
+echo "Starting new backend process (logging to $BACKEND_LOG_FILE)..."
 (
     cd backend-ts || exit 1
     if [ ! -d "node_modules" ]; then
@@ -45,8 +49,8 @@ echo "Starting new backend process (logging to terminal)..."
         npm install
     fi
     
-    # Start NestJS in background, log to terminal, save PID
-    npm run start:dev > ../backend.log 2>&1 &
+    # Start NestJS in background, log to file in project root, save PID in project root
+    npm run start:dev > "../$BACKEND_LOG_FILE" 2>&1 &
     NEW_PID=$!
     echo $NEW_PID > "../$BACKEND_PID_FILE"
 ) 
@@ -60,11 +64,17 @@ if [ -f "$BACKEND_PID_FILE" ]; then
         if check_port "$BACKEND_PORT"; then
             echo "Backend restarted successfully. New PID: $VERIFY_PID"
             echo "------------------------------------ "
-            echo "Showing logs (press Ctrl+C to stop watching logs, backend will keep running)..."
+            echo "Showing logs from $BACKEND_LOG_FILE (press Ctrl+C to stop watching logs, backend will keep running)..."
             echo "------------------------------------ "
-            tail -f backend.log
+            tail -f "$BACKEND_LOG_FILE"
         else
-            echo "ERROR: Backend process started but not listening on port $BACKEND_PORT" >&2
+            # --- Show log output on failure --- START ---
+            echo "------------------------------------------------------" >&2
+            echo "ERROR: Backend process started (PID $VERIFY_PID) but failed to listen on port $BACKEND_PORT." >&2
+            echo "--- Last lines from $BACKEND_LOG_FILE: --- " >&2
+            tail -n 20 "$BACKEND_LOG_FILE" >&2 
+            echo "------------------------------------------------------" >&2
+            # --- Show log output on failure --- END ---
             kill "$VERIFY_PID" 2>/dev/null
             rm -f "$BACKEND_PID_FILE"
             exit 1

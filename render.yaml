@@ -17,7 +17,7 @@ services:
     plan: free         # Use the free tier web service (sleeps on inactivity)
     # Specifies the subdirectory containing the backend code
     rootDir: backend-ts 
-    # Commands to build the backend
+    # Commands to build the backendин
     buildCommand: npm install && npm run build
     # Command to start the backend server (using production build)
     startCommand: npm run start:prod
