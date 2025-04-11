@@ -59,7 +59,7 @@ The current version provides a web interface to:
 
 ## Key Technologies
 
-*   **Backend:** Python (FastAPI)
+*   **Backend:** TypeScript (NestJS / TypeORM)
 *   **Frontend:** TypeScript (Next.js, React)
 *   **Database:** PostgreSQL (via Docker)
 *   **LLM for Text Generation & Analysis:** Anthropic Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`)
@@ -67,36 +67,9 @@ The current version provides a web interface to:
 
 Data is stored persistently in the PostgreSQL database managed by Docker Compose.
 
-## Deployment (WIP on Render)
+## Deployment
 
-This project includes a `render.yaml` file to facilitate deployment to the [Render](https://render.com/) platform (Work In Progress).
-
-**Overview:**
-
-The `render.yaml` defines three services necessary to run the application on Render's free tiers:
-
-1.  **`vibe-db` (PostgreSQL):** A free-tier PostgreSQL database instance.
-2.  **`vibe-backend` (Node.js Web Service):** Runs the NestJS backend API located in the `backend-ts` directory.
-3.  **`vibe-frontend` (Node.js Web Service):** Runs the Next.js frontend application located in the `frontend` directory.
-
-**Deployment Steps:**
-
-1.  **Commit `render.yaml`:** Ensure the `render.yaml` file is in your repository root and committed.
-2.  **Render Blueprint:** On the Render dashboard, create a new "Blueprint" instance and connect it to your repository.
-3.  **Review & Create:** Render should automatically detect the services from the YAML file. Review the settings and create the resources.
-4.  **Set Secrets:** **Crucially**, navigate to the `vibe-backend` service settings in Render, go to the "Environment" tab, and add the following environment variables with your actual secret values:
-    *   `ANTHROPIC_API_KEY`
-    *   `ELEVENLABS_API_KEY`
-    *   `ELEVENLABS_VOICE_ID`
-    *(These are marked with `sync: false` in the YAML, so they MUST be set via the Render dashboard).* 
-5.  **Wait & Access:** Allow time for the initial builds and deploys. Once the `vibe-frontend` service is live, access it using the URL provided by Render.
-
-**Important Notes:**
-
-*   **WIP:** This deployment configuration is still under development and may require adjustments.
-*   **Free Tier Limits:** Render's free web services sleep after inactivity and have resource limits.
-*   **Backend Port:** Ensure your NestJS backend (`backend-ts/src/main.ts`) correctly uses `process.env.PORT || 8000` to listen on the port specified by Render.
-*   **Health Check:** The `healthCheckPath` in `render.yaml` assumes a `/api/health` endpoint exists on the backend. Adjust or remove if necessary.
+Deployment is planned using AWS (App Runner, RDS, S3) managed via Terraform. Configuration and plans can be found in the `infra/` directory.
 
 ## Text Generation: Creating Interactive Learning Data
 

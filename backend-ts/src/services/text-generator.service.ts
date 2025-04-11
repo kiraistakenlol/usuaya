@@ -111,25 +111,10 @@ ${JSON.stringify(llmInput, null, 2)}
 
     this.logger.log('--- Calling LlmProvider.generateJsonResponse (expecting FINAL simplified structure) --- ');
     this.logger.debug('Vocabulary being sent:', JSON.stringify(llmInput.vocabulary, null, 2)); // Log the structured vocabulary
-    // Log prompts if needed for debugging (can be verbose)
-    // console.log('System Prompt:', this.ANALYSIS_PROMPT);
-    // console.log('User Prompt (Input Data):', userPrompt);
 
     try {
       const llmResponse = await this.llmProvider.generateJsonResponse(userPrompt, this.ANALYSIS_PROMPT);
       const rawContent = llmResponse.content;
-      // Remove log of full raw content
-      // this.logger.log('--- LlmProvider.generateJsonResponse Raw Content (Final Simplified) ---', rawContent);
-      
-      // Keep writing to log file if desired for debugging, otherwise remove
-      // try {
-      //   const projectRoot = path.resolve(__dirname, '../../..'); 
-      //   const logFilePath = path.join(projectRoot, 'llm_raw_response.log');
-      //   fs.writeFileSync(logFilePath, rawContent || '[LLM Response was null or empty]', 'utf8');
-      //   this.logger.debug(`Raw LLM response written to ${logFilePath}`);
-      // } catch (fileError) {
-      //   this.logger.error('Failed to write raw LLM response to debug file:', fileError);
-      // }
 
       let parsedLlmData: any;
       try {
