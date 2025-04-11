@@ -19,38 +19,37 @@ variable "project_name" {
 variable "rds_instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t3.micro" # Small instance for cost-saving
+  default     = "db.t3.micro" # Free tier eligible instance
 }
 
 variable "rds_db_name" {
   description = "Name for the RDS database"
   type        = string
-  default     = "vibecodingdb"
+  default     = "usuaya_db"
 }
 
 variable "rds_username" {
   description = "Username for the RDS database master user"
   type        = string
-  default     = "vibeadmin"
+  default     = "usuaya_admin"
 }
 
 variable "rds_password_secret_arn" {
   description = "ARN of the AWS Secrets Manager secret containing the RDS password"
   type        = string
-  # No default - MUST be provided by user after creating the secret
-  # Example: "arn:aws:secretsmanager:us-east-1:123456789012:secret:rds-db-password-abcdef"
+  default     = "arn:aws:secretsmanager:us-east-1:480238144173:secret:usuaya/rds/password-RATQvG"
 }
 
-variable "github_repo_url" {
-  description = "URL of the GitHub repository for the frontend (e.g., https://github.com/your_user/your_repo)"
+variable "s3_audio_bucket_name" {
+  description = "Globally unique name for the S3 bucket for audio storage"
   type        = string
-  # No default - MUST be provided by user
+  default     = "usuaya-audio-storage-dev"
 }
 
 variable "github_oauth_token_secret_arn" {
   description = "ARN of the AWS Secrets Manager secret containing the GitHub personal access token for Amplify"
   type        = string
-  # No default - MUST be provided by user after creating the secret
+  default     = "arn:aws:secretsmanager:us-east-1:480238144173:secret:usuaya/github/pat-NdueOl"
 }
 
 variable "frontend_branch_name" {

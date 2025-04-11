@@ -24,12 +24,12 @@ data "aws_security_group" "default" {
 
 
 # --- Secrets Manager Data Sources ---
-# Retrieve the actual password from the secret created manually by the user
+# Retrieve the actual password from the secret using the provided ARN
 data "aws_secretsmanager_secret_version" "rds_password" {
   secret_id = var.rds_password_secret_arn
 }
 
-# Retrieve the GitHub token from the secret created manually by the user
+# Retrieve the GitHub token from the secret using the provided ARN
 data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = var.github_oauth_token_secret_arn
 }
@@ -50,15 +50,14 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow PostgreSQL traffic from App Runner"
   vpc_id      = data.aws_vpc.default.id
 
-  # Ingress rule will be added later once App Runner's SG is known,
-  # or could allow broader access from within VPC for initial simplicity (less secure)
-  # Example: Allow access from default SG (simplistic, potentially too open)
-  # ingress {
-  #   from_port       = 5432
-  #   to_port         = 5432
-  #   protocol        = "tcp"
-  #   security_groups = [data.aws_security_group.default.id]
-  # }
+  # Temporarily allow access from the default SG for initial setup.
+  # TODO: Refine this to allow access specifically from App Runner.
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [data.aws_security_group.default.id]
+  }
 
   # Allow all outbound traffic
   egress {
@@ -75,17 +74,18 @@ resource "aws_security_group" "rds_sg" {
 
 
 resource "aws_db_instance" "postgres_db" {
-  allocated_storage      = 20 # Minimum GB
+  allocated_storage      = 20 # GB, Free tier eligible storage size with t3.micro
   engine                 = "postgres"
-  engine_version         = "15" # Specify a recent version
+  engine_version         = "15.6" # Use a specific minor version for stability
   instance_class         = var.rds_instance_class
   db_name                = var.rds_db_name
   username               = var.rds_username
   password               = data.aws_secretsmanager_secret_version.rds_password.secret_string
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  skip_final_snapshot    = true # For easier cleanup during testing, set false for production
+  skip_final_snapshot    = true  # For easier cleanup during testing
   publicly_accessible    = false # Keep DB private
+  apply_immediately      = true  # Useful during development
 
   tags = {
     Name = "${var.project_name}-rds-db"
@@ -95,16 +95,14 @@ resource "aws_db_instance" "postgres_db" {
 
 # --- S3 (Audio Storage) ---
 resource "aws_s3_bucket" "audio_storage" {
-  bucket = "${var.project_name}-audio-${random_id.bucket_suffix.hex}" # Ensure unique bucket name
-  # Consider adding ACLs, policies, CORS config as needed later
+  bucket = var.s3_audio_bucket_name # Use the variable for the bucket name
+
+  # Add lifecycle rule to expire objects after some time? (Optional)
+  # Add CORS rules if frontend needs direct access (Likely not needed if backend handles uploads)
+
   tags = {
     Name = "${var.project_name}-audio-storage"
   }
-}
-
-# Generates a random suffix for the S3 bucket name to help ensure uniqueness
-resource "random_id" "bucket_suffix" {
-  byte_length = 4
 }
 
 
@@ -177,7 +175,7 @@ resource "aws_iam_policy" "apprunner_access_policy" {
       },
       {
         Action = [
-            "ecr:GetAuthorizationToken"
+          "ecr:GetAuthorizationToken"
         ]
         Effect   = "Allow"
         Resource = "*" # Necessary for ECR auth
@@ -190,7 +188,7 @@ resource "aws_iam_policy" "apprunner_access_policy" {
           "s3:DeleteObject"
           # Add other S3 permissions as needed
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           aws_s3_bucket.audio_storage.arn,
           "${aws_s3_bucket.audio_storage.arn}/*"
@@ -200,7 +198,7 @@ resource "aws_iam_policy" "apprunner_access_policy" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Effect   = "Allow"
+        Effect = "Allow"
         Resource = [
           var.rds_password_secret_arn,
           var.github_oauth_token_secret_arn
@@ -249,34 +247,28 @@ resource "aws_apprunner_service" "backend_service" {
   instance_configuration {
     cpu    = "1024" # 1 vCPU
     memory = "2048" # 2 GB RAM
-    # instance_role_arn = aws_iam_role.apprunner_execution_role.arn # For accessing other AWS services from running code
+    # Note: port configuration is inside source_configuration.image_repository.image_configuration
   }
 
-  # Network configuration - Using default VPC public access for simplicity
-  # network_configuration {
-  #   egress_configuration {
-  #     egress_type = "DEFAULT"
-  #   }
-  # }
-  # If RDS needs private access, configure VPC connector here:
-  # network_configuration {
-  #    ingress_configuration {
-  #      is_publicly_accessible = true # Set to false if only accessed via internal LB/API Gateway
-  #    }
-  #   egress_configuration {
-  #     egress_type = "VPC"
-  #     vpc_connector_arn = aws_apprunner_vpc_connector.app_runner_vpc_connector.arn
-  #   }
-  # }
-
-
-  # Environment variables - reference secrets!
-  # Example - structure needs to be adapted based on how NestJS reads connection string
-  health_check_configuration {
-      protocol = "TCP"
-      port = "8000" # same as container port
-      # path = "/health" # Add a health check endpoint to NestJS if desired
+  # Networking configuration (using default VPC for now)
+  network_configuration {
+    egress_configuration {
+      egress_type = "DEFAULT" # Allow outbound traffic to the internet
+    }
+    # ingress_configuration {
+    #   is_publicly_accessible = true # Make the service accessible from the internet
+    # }
   }
+
+  # health_check_configuration {
+  #   protocol            = "TCP"
+  #   port                = "8000"        # Port the container listens on for health checks
+  #   path                = "/api/health" # Assuming a health check endpoint exists
+  #   interval            = 10            # seconds
+  #   timeout             = 5             # seconds
+  #   healthy_threshold   = 1
+  #   unhealthy_threshold = 2
+  # }
 
   tags = {
     Name = "${var.project_name}-backend-service"
@@ -284,49 +276,60 @@ resource "aws_apprunner_service" "backend_service" {
 }
 
 # --- Amplify (Frontend Hosting) ---
-resource "aws_amplify_app" "frontend_app" {
-  name                       = "${var.project_name}-frontend-app"
-  repository                 = var.github_repo_url
-  access_token               = data.aws_secretsmanager_secret_version.github_token.secret_string
-  platform                   = "WEB_COMPUTE" # For Next.js SSR/ISR. Use "WEB" for static SPA (React, Vue, Angular).
-  build_spec                 = <<-EOT
-    version: 1
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm ci # Use ci for faster installs in CI/CD
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        baseDirectory: .next # For Next.js default build output
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-  EOT
-  # Environment variables set via Amplify Console usually, but can be defined here too
-  # environment_variables = {
-  #   NEXT_PUBLIC_API_URL = aws_apprunner_service.backend_service.service_url
-  # }
+# TODO: Uncomment and configure once GitHub repo URL is set
+# resource "aws_amplify_app" "frontend_app" {
+#   name       = "${var.project_name}-frontend-app"
+#   repository = var.github_repo_url
+#   oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
 
-  tags = {
-    Name = "${var.project_name}-frontend-app"
-  }
-}
+#   # Build settings (example for Next.js)
+#   build_spec = <<-EOT
+#     version: 1
+#     frontend:
+#       phases:
+#         preBuild:
+#           commands:
+#             - cd frontend
+#             - npm ci
+#         build:
+#           commands:
+#             - npm run build
+#       artifacts:
+#         baseDirectory: frontend/.next
+#         files:
+#           - '**/*'
+#       cache:
+#         paths:
+#           - frontend/node_modules/**/*
+#   EOT
 
-resource "aws_amplify_branch" "frontend_branch" {
-  app_id      = aws_amplify_app.frontend_app.id
-  branch_name = var.frontend_branch_name
-  framework   = "Next.js - SSR" # Or "React" etc. depending on your frontend
-  stage       = "PRODUCTION" # Or DEVELOPMENT etc.
+#   # Environment variables for the frontend build/runtime
+#   # environment_variables = {
+#   #   NEXT_PUBLIC_API_URL = aws_apprunner_service.backend_service.service_url # Or your custom domain
+#   # }
 
-  # Enable features if needed
-  enable_auto_build = true
-  # enable_pull_request_preview = true
-}
+#   # Custom rules (e.g., for Next.js routing)
+#   # custom_rules {
+#   #   source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
+#   #   target = "/index.html"
+#   #   status = "200"
+#   # }
+
+#   tags = {
+#     Name = "${var.project_name}-frontend-app"
+#   }
+# }
+
+# resource "aws_amplify_branch" "frontend_branch" {
+#   app_id      = aws_amplify_app.frontend_app.id
+#   branch_name = var.frontend_branch_name
+#   stage       = "PRODUCTION" # Or DEVELOPMENT, etc.
+#   enable_auto_build = true
+
+#   tags = {
+#     Name = "${var.project_name}-frontend-branch-${var.frontend_branch_name}"
+#   }
+# }
 
 # Need to allow RDS Security group ingress from App Runner
 # This depends on App Runner creating its own outbound Security Group when using VPC egress.
