@@ -100,66 +100,72 @@ The `render.yaml` defines three services necessary to run the application on Ren
 
 ## Text Generation: Creating Interactive Learning Data
 
-**Goal:** When you provide a list of vocabulary words, the backend's goal is to generate not just a Spanish text and audio, but also a rich set of data (`analysis_data`) that allows the frontend to be an interactive learning tool. This data powers features like synchronized highlighting between audio and text, clickable words that jump the audio, and popups explaining words and grammar.
+**Goal:** ... generate ... a set of data (`analysis_data`) that allows the frontend to be an interactive learning tool. This data powers features like synchronized highlighting between audio and text, clickable words that jump the audio, and identifying used vocabulary.
 
 **The Core Data: `analysis_data`**
 
-The main output stored in the `Text` table's `analysis_data` column is a single JSON object containing everything needed for the frontend experience. It looks roughly like this:
+The main output stored in the `Text` table's `analysis_data` column is a single JSON object containing everything needed for the simplified frontend experience. It looks roughly like this:
 
 ```json
 {
-  "word_timings": [ ... ],       // Spanish word timings + sequential index
-  "spanish_plain": "...",        // The original Spanish text
-  "analysis_result": { ... },    // Detailed Spanish analysis from Claude AI
-  "english_data": { ... }        // Tokenized English text + alignment map
+  "word_timings": [ ... ],                   // Spanish word timings + sequential index
+  "spanish_plain": "...",                    // The original Spanish text
+  "indexed_spanish_words": { ... },        // Map: Spanish index -> { text, vocab_id }
+  "indexed_english_translation_words": [ ... ], // Array of English token strings
+  "alignment_spanish_to_english": { ... }     // Map: Spanish index -> English token indices
 }
 ```
 
-Let's break down the important parts inside `analysis_data`:
+**Additional Stored Data (in separate `Text` table columns):**
+
+*   `llm_generation_request_prompt`: The full prompt sent to the LLM for initial text generation.
+*   `raw_llm_generation_response`: The raw text response received for initial text generation.
+*   `llm_analysis_request`: The JSON payload sent to the LLM for analysis.
+*   `raw_llm_analysis_response`: The raw JSON string received from the LLM analysis call.
+
+(These logging fields are stored for debugging/auditing but are not typically used directly by the frontend).
+
+Let's break down the important parts inside the main `analysis_data` field:
 
 **1. `word_timings` (Array of Objects)**
 
-*   **What it is:** An ordered list where each object represents a single Spanish word/punctuation segment. It combines timing from audio with a unique sequential index.
-*   **Relationship:** Backbone for syncing audio and Spanish text. The `index` links to `analysis_result.analysis_by_index` and the keys in `english_data.spanish_index_to_english_indices`.
+*   **What it is:** An ordered list where each object represents a single Spanish word/punctuation segment. It combines timing from audio with a unique sequential `index`.
+*   **Relationship:** Backbone for syncing audio and Spanish text. The `index` links to `indexed_spanish_words` and the keys in `alignment_spanish_to_english`.
 *   **Structure Example:**
     ```typescript
     {
       "index": 4,        // 0-based position. **Crucial Link** to analysis & alignment.
-      "word": "casa",    // The Spanish word.
+      "word": "casa",    // The Spanish word (from audio service, might differ slightly from LLM analysis).
       "start": 0.778,    // Start time in audio (seconds).
       "end": 1.033,      // End time in audio (seconds).
       "confidence": 1    // Audio engine confidence (0-1).
     }
     ```
-*   **Frontend Use:** Highlights Spanish word based on `start`/`end`, seeks audio based on `start`, links to analysis/alignment via `index`.
+*   **Frontend Use:** Highlights Spanish word based on `start`/`end`, seeks audio based on `start`, links to alignment via `index`.
 
-**2. `analysis_result` (Object)**
+**2. `indexed_spanish_words` (Object)**
 
-*   **What it is:** Contains the detailed linguistic analysis of the *Spanish* text.
-*   **Relationship:** Linked to `word_timings` via the `index`.
-*   **Key Parts Inside `analysis_result`:**
-    *   **a. `analysis_by_index` (Object):** Dictionary keyed by Spanish `index` (string). Value has info about *that specific Spanish word*.
-        *   **Structure Example (`"4"`):** `{ "original_word": "casa", "lemma": "casa", "pos": "noun", "english_word_translation": "house" }`
-        *   **Frontend Use:** Populates hover popups for Spanish words (lemma, POS, contextual translation). To find annotations for a word, the frontend now iterates through the main `annotations` object and checks if the word's index is in their `scope_indices`.
-    *   **b. `annotations` (Object):** Dictionary keyed by unique `annotation_id`. Value describes a specific linguistic point (slang, grammar) potentially spanning multiple Spanish words.
-        *   **Structure Example (`"ann1"`):** `{ "type": "grammar", "scope_indices": [0, 1], "label": "Voseo", "explanation_spanish": "...", "explanation_english": "..." }`
-        *   **Frontend Use:** The `scope_indices` array directly links the annotation to the relevant word indices from `word_timings`. Used to highlight words and display explanations in popups.
+*   **What it is:** Dictionary keyed by Spanish `index` (string). Value contains the text of the Spanish word as seen by the LLM and its vocabulary ID.
+*   **Relationship:** Linked to `word_timings` via the `index` key.
+*   **Structure Example (`"4"`):** `{ "text": "casa", "vocabulary_id": null }`
+*   **Frontend Use:** Used to render the Spanish text and check `vocabulary_id` to highlight words that were part of the input vocabulary.
 
-**3. `english_data` (Object)**
+**3. `indexed_english_translation_words` (Array of Strings)**
 
-*   **What it is:** Contains the tokenized English translation and the map linking it back to the Spanish words.
-*   **Key Parts Inside `english_data`:**
-    *   **a. `tokens` (Array of Objects):** Ordered list representing the English translation, broken down into words/punctuation.
-        *   **Structure Example:** `[ { "text": "You" }, { "text": "know" }, { "text": "that" }, ... ]`
-        *   **Frontend Use:** Used to render the English text interactively. The array index of each token is used for highlighting via the alignment map.
-    *   **b. `spanish_index_to_english_indices` (Object):** The crucial alignment map.
-        *   **What it is:** Dictionary where keys are Spanish `index` values (from `word_timings`, as strings). Values are arrays of **array indices** corresponding to the `tokens` array above.
-        *   **Structure Example:** `{ "0": [0], "1": [1], "5": [3, 4], "19": [15], "20": [15], "21": [15] }` (e.g., Spanish word at index 5 maps to English tokens at array indices 3 and 4).
-        *   **Frontend Use:** When a Spanish word (index `i`) is highlighted (due to audio playback or hover), the frontend looks up `spanish_index_to_english_indices[String(i)]` and highlights the English tokens at the specified array indices.
+*   **What it is:** Ordered list representing the English translation, broken down into words/punctuation strings.
+*   **Structure Example:** `[ "You", "know", "that", ... ]`
+*   **Frontend Use:** Used to render the English text. The array index of each token is used for highlighting via the alignment map.
 
-**4. `spanish_plain` (String)**
+**4. `alignment_spanish_to_english` (Object)**
+
+*   **What it is:** The crucial alignment map.
+*   **What it is:** Dictionary where keys are Spanish `index` values (from `word_timings`, as strings). Values are arrays of **array indices** corresponding to the `indexed_english_translation_words` array.
+*   **Structure Example:** `{ "0": [0], "1": [1], "5": [3, 4], "19": [15], "20": [15] }` (e.g., Spanish word at index 5 maps to English tokens at array indices 3 and 4).
+*   **Frontend Use:** When a Spanish word (index `i`) is highlighted (due to audio playback or hover), the frontend looks up `alignment_spanish_to_english[String(i)]` and highlights the English tokens at the specified array indices. Also used for English-to-Spanish hover.
+
+**5. `spanish_plain` (String)**
 
 *   **What it is:** The original generated Spanish text as a single string.
 *   **Frontend Use:** Primarily for reference or fallback display.
 
-By linking these structures—using the Spanish `index` to connect timings, Spanish analysis (`analysis_by_index`), and the alignment map (`english_data`), while using `scope_indices` within the main `annotations` object to link linguistic points back to word indices—the frontend can provide a dynamic and informative learning interface with synchronized highlighting. 
+By linking these structures—using the Spanish `index` to connect timings, the Spanish word details (`indexed_spanish_words`), and the alignment map (`alignment_spanish_to_english`)—the frontend can provide a dynamic learning interface with synchronized highlighting and vocabulary identification. 

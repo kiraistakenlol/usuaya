@@ -1,0 +1,531 @@
+{
+    "indexed_spanish_words": {
+      "0": {
+        "text": "Cuando",
+        "vocabulary_id": null
+      },
+      "1": {
+        "text": "llegué",
+        "vocabulary_id": null
+      },
+      "2": {
+        "text": "a",
+        "vocabulary_id": null
+      },
+      "3": {
+        "text": "Argentina,",
+        "vocabulary_id": null
+      },
+      "4": {
+        "text": "tuve",
+        "vocabulary_id": null
+      },
+      "5": {
+        "text": "que",
+        "vocabulary_id": null
+      },
+      "6": {
+        "text": "aprender",
+        "vocabulary_id": null
+      },
+      "7": {
+        "text": "a",
+        "vocabulary_id": null
+      },
+      "8": {
+        "text": "dar",
+        "vocabulary_id": "vocab_0"
+      },
+      "9": {
+        "text": "las",
+        "vocabulary_id": null
+      },
+      "10": {
+        "text": "gracias",
+        "vocabulary_id": null
+      },
+      "11": {
+        "text": "de",
+        "vocabulary_id": null
+      },
+      "12": {
+        "text": "una",
+        "vocabulary_id": null
+      },
+      "13": {
+        "text": "manera",
+        "vocabulary_id": null
+      },
+      "14": {
+        "text": "diferente.",
+        "vocabulary_id": null
+      },
+      "15": {
+        "text": "En",
+        "vocabulary_id": null
+      },
+      "16": {
+        "text": "Rusia",
+        "vocabulary_id": null
+      },
+      "17": {
+        "text": "solía",
+        "vocabulary_id": null
+      },
+      "18": {
+        "text": "ser",
+        "vocabulary_id": null
+      },
+      "19": {
+        "text": "muy",
+        "vocabulary_id": null
+      },
+      "20": {
+        "text": "formal,",
+        "vocabulary_id": null
+      },
+      "21": {
+        "text": "pero",
+        "vocabulary_id": null
+      },
+      "22": {
+        "text": "acá",
+        "vocabulary_id": null
+      },
+      "23": {
+        "text": "la",
+        "vocabulary_id": null
+      },
+      "24": {
+        "text": "gente",
+        "vocabulary_id": null
+      },
+      "25": {
+        "text": "es",
+        "vocabulary_id": null
+      },
+      "26": {
+        "text": "más",
+        "vocabulary_id": null
+      },
+      "27": {
+        "text": "relajada.",
+        "vocabulary_id": null
+      },
+      "28": {
+        "text": "Mi",
+        "vocabulary_id": null
+      },
+      "29": {
+        "text": "vecina",
+        "vocabulary_id": null
+      },
+      "30": {
+        "text": "Marta",
+        "vocabulary_id": null
+      },
+      "31": {
+        "text": "siempre",
+        "vocabulary_id": null
+      },
+      "32": {
+        "text": "me",
+        "vocabulary_id": null
+      },
+      "33": {
+        "text": "ayuda",
+        "vocabulary_id": null
+      },
+      "34": {
+        "text": "con",
+        "vocabulary_id": null
+      },
+      "35": {
+        "text": "el",
+        "vocabulary_id": null
+      },
+      "36": {
+        "text": "idioma",
+        "vocabulary_id": null
+      },
+      "37": {
+        "text": "y",
+        "vocabulary_id": null
+      },
+      "38": {
+        "text": "me",
+        "vocabulary_id": null
+      },
+      "39": {
+        "text": "dice",
+        "vocabulary_id": null
+      },
+      "40": {
+        "text": "que",
+        "vocabulary_id": null
+      },
+      "41": {
+        "text": "no",
+        "vocabulary_id": null
+      },
+      "42": {
+        "text": "tengo",
+        "vocabulary_id": null
+      },
+      "43": {
+        "text": "que",
+        "vocabulary_id": null
+      },
+      "44": {
+        "text": "dar",
+        "vocabulary_id": "vocab_0"
+      },
+      "45": {
+        "text": "tantas",
+        "vocabulary_id": null
+      },
+      "46": {
+        "text": "vueltas",
+        "vocabulary_id": null
+      },
+      "47": {
+        "text": "para",
+        "vocabulary_id": null
+      },
+      "48": {
+        "text": "pedir",
+        "vocabulary_id": null
+      },
+      "49": {
+        "text": "algo.",
+        "vocabulary_id": null
+      },
+      "50": {
+        "text": "El",
+        "vocabulary_id": null
+      },
+      "51": {
+        "text": "otro",
+        "vocabulary_id": null
+      },
+      "52": {
+        "text": "día",
+        "vocabulary_id": null
+      },
+      "53": {
+        "text": "me",
+        "vocabulary_id": null
+      },
+      "54": {
+        "text": "animé",
+        "vocabulary_id": null
+      },
+      "55": {
+        "text": "a",
+        "vocabulary_id": null
+      },
+      "56": {
+        "text": "dar",
+        "vocabulary_id": "vocab_0"
+      },
+      "57": {
+        "text": "el",
+        "vocabulary_id": null
+      },
+      "58": {
+        "text": "primer",
+        "vocabulary_id": null
+      },
+      "59": {
+        "text": "paso",
+        "vocabulary_id": null
+      },
+      "60": {
+        "text": "y",
+        "vocabulary_id": null
+      },
+      "61": {
+        "text": "la",
+        "vocabulary_id": null
+      },
+      "62": {
+        "text": "invité",
+        "vocabulary_id": null
+      },
+      "63": {
+        "text": "a",
+        "vocabulary_id": null
+      },
+      "64": {
+        "text": "tomar",
+        "vocabulary_id": null
+      },
+      "65": {
+        "text": "un",
+        "vocabulary_id": null
+      },
+      "66": {
+        "text": "mate.",
+        "vocabulary_id": null
+      },
+      "67": {
+        "text": "Ella",
+        "vocabulary_id": null
+      },
+      "68": {
+        "text": "me",
+        "vocabulary_id": null
+      },
+      "69": {
+        "text": "quiso",
+        "vocabulary_id": null
+      },
+      "70": {
+        "text": "dar",
+        "vocabulary_id": "vocab_0"
+      },
+      "71": {
+        "text": "una",
+        "vocabulary_id": null
+      },
+      "72": {
+        "text": "mano",
+        "vocabulary_id": null
+      },
+      "73": {
+        "text": "con",
+        "vocabulary_id": null
+      },
+      "74": {
+        "text": "las",
+        "vocabulary_id": null
+      },
+      "75": {
+        "text": "expresiones",
+        "vocabulary_id": null
+      },
+      "76": {
+        "text": "locales",
+        "vocabulary_id": null
+      },
+      "77": {
+        "text": "y",
+        "vocabulary_id": null
+      },
+      "78": {
+        "text": "pasamos",
+        "vocabulary_id": null
+      },
+      "79": {
+        "text": "toda",
+        "vocabulary_id": null
+      },
+      "80": {
+        "text": "la",
+        "vocabulary_id": null
+      },
+      "81": {
+        "text": "tarde",
+        "vocabulary_id": null
+      },
+      "82": {
+        "text": "charlando.",
+        "vocabulary_id": null
+      },
+      "83": {
+        "text": "Me",
+        "vocabulary_id": null
+      },
+      "84": {
+        "text": "dijo",
+        "vocabulary_id": null
+      },
+      "85": {
+        "text": "que",
+        "vocabulary_id": null
+      },
+      "86": {
+        "text": "para",
+        "vocabulary_id": null
+      },
+      "87": {
+        "text": "hacer",
+        "vocabulary_id": null
+      },
+      "88": {
+        "text": "amigos",
+        "vocabulary_id": null
+      },
+      "89": {
+        "text": "acá,",
+        "vocabulary_id": null
+      },
+      "90": {
+        "text": "tenés",
+        "vocabulary_id": null
+      },
+      "91": {
+        "text": "que",
+        "vocabulary_id": null
+      },
+      "92": {
+        "text": "dar",
+        "vocabulary_id": "vocab_0"
+      },
+      "93": {
+        "text": "lo",
+        "vocabulary_id": null
+      },
+      "94": {
+        "text": "mejor",
+        "vocabulary_id": null
+      },
+      "95": {
+        "text": "de",
+        "vocabulary_id": null
+      },
+      "96": {
+        "text": "vos",
+        "vocabulary_id": null
+      },
+      "97": {
+        "text": "mismo",
+        "vocabulary_id": null
+      },
+      "98": {
+        "text": "y",
+        "vocabulary_id": null
+      },
+      "99": {
+        "text": "ser",
+        "vocabulary_id": null
+      },
+      "100": {
+        "text": "auténtico",
+        "vocabulary_id": null
+      }
+    },
+    "indexed_english_translation_words": [
+      "When",
+      "I",
+      "arrived",
+      "in",
+      "Argentina",
+      ",",
+      "I",
+      "had",
+      "to",
+      "learn",
+      "to",
+      "give",
+      "thanks",
+      "in",
+      "a",
+      "different",
+      "way",
+      "."
+    ],
+    "alignment_spanish_to_english": {
+      "0": [0],
+      "1": [1, 2],
+      "2": [3],
+      "3": [4, 5],
+      "4": [6, 7],
+      "5": [8],
+      "6": [9],
+      "7": [10],
+      "8": [11],
+      "9": [],
+      "10": [12],
+      "11": [13],
+      "12": [14],
+      "13": [16],
+      "14": [15, 17],
+      "15": [],
+      "16": [],
+      "17": [],
+      "18": [],
+      "19": [],
+      "20": [],
+      "21": [],
+      "22": [],
+      "23": [],
+      "24": [],
+      "25": [],
+      "26": [],
+      "27": [],
+      "28": [],
+      "29": [],
+      "30": [],
+      "31": [],
+      "32": [],
+      "33": [],
+      "34": [],
+      "35": [],
+      "36": [],
+      "37": [],
+      "38": [],
+      "39": [],
+      "40": [],
+      "41": [],
+      "42": [],
+      "43": [],
+      "44": [],
+      "45": [],
+      "46": [],
+      "47": [],
+      "48": [],
+      "49": [],
+      "50": [],
+      "51": [],
+      "52": [],
+      "53": [],
+      "54": [],
+      "55": [],
+      "56": [],
+      "57": [],
+      "58": [],
+      "59": [],
+      "60": [],
+      "61": [],
+      "62": [],
+      "63": [],
+      "64": [],
+      "65": [],
+      "66": [],
+      "67": [],
+      "68": [],
+      "69": [],
+      "70": [],
+      "71": [],
+      "72": [],
+      "73": [],
+      "74": [],
+      "75": [],
+      "76": [],
+      "77": [],
+      "78": [],
+      "79": [],
+      "80": [],
+      "81": [],
+      "82": [],
+      "83": [],
+      "84": [],
+      "85": [],
+      "86": [],
+      "87": [],
+      "88": [],
+      "89": [],
+      "90": [],
+      "91": [],
+      "92": [],
+      "93": [],
+      "94": [],
+      "95": [],
+      "96": [],
+      "97": [],
+      "98": [],
+      "99": [],
+      "100": []
+    }
+  }

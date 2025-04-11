@@ -21,74 +21,78 @@ export class TextService {
   ) {}
 
   async create(createTextDto: CreateTextDto): Promise<Text> {
-    this.logger.log(`--- Starting Text Creation for Vocab: ${createTextDto.vocabulary.join(', ')} ---`);
-    
-    try {
-      // 1. Generate Spanish Text
-      const spanishText = await this.textGeneratorService.generateSimpleText(createTextDto.vocabulary);
-      this.logger.log(`Step 1 Complete: Generated Spanish Text (${spanishText.length} chars)`);
+    // Keep variables for DB storage
+    let generationPrompt = '';
+    let rawGenerationResponse = ''; 
+    let analysisRequest = {}; 
+    let rawAnalysisResponse = ''; 
 
-      // 2. Generate Audio Entity (contains file_id and original timings)
+    this.logger.log(`--- Starting Text Creation for Vocab: ${createTextDto.vocabulary.join(', ')} ---`);
+
+    try {
+      // 1. Generate Spanish Text & Capture Prompt
+      const generationResult = await this.textGeneratorService.generateSimpleText(createTextDto.vocabulary);
+      const spanishText = generationResult.text;
+      generationPrompt = generationResult.promptUsed; // Keep for DB
+      rawGenerationResponse = spanishText; // Keep for DB
+      this.logger.log(`Step 1 Complete: Generated Spanish Text (${spanishText.length} chars)`); // Keep step log
+
+      // 2. Generate Audio Entity
       const audioEntity = await this.audioService.generateAudio(spanishText);
       this.logger.log(`Step 2 Complete: Generated Audio Entity ID: ${audioEntity.id}, File ID: ${audioEntity.file_id}`);
 
-      // 3. Preprocess Timings (Add sequential index)
-      if (!audioEntity.word_timings) {
-        throw new Error('Word timings missing from generated audio entity.');
-      }
-      // Revert to direct mapping to add index
-      const indexedTimings: IndexedWordSegment[] = audioEntity.word_timings.map((timing, index) => ({
-        ...timing,
-        index: index,
-      }));
+      // 3. Preprocess Timings
+      if (!audioEntity.word_timings) { throw new Error('Word timings missing...'); }
+      const indexedTimings: IndexedWordSegment[] = audioEntity.word_timings.map((timing, index) => ({ ...timing, index: index }));
       this.logger.log(`Step 3 Complete: Prepared ${indexedTimings.length} Indexed Timings`);
 
-      // Prepare structured vocabulary with IDs
-      const structuredVocabulary = createTextDto.vocabulary.map((word, index) => ({
-        id: `vocab_${index}`,
-        word: word
-      }));
-      // Log the structured vocabulary before assigning it
-      this.logger.debug('Structured Vocabulary prepared:', JSON.stringify(structuredVocabulary, null, 2));
+      // Prepare structured vocabulary
+      const structuredVocabulary = createTextDto.vocabulary.map((word, index) => ({ id: `vocab_${index}`, word: word }));
+      // Remove debug log of full vocab
+      // this.logger.debug('Structured Vocabulary prepared:', JSON.stringify(structuredVocabulary, null, 2));
 
-      // 4. Analyze Indexed Words
-      const analysisDataFromClaude = await this.textGeneratorService.analyzeIndexedWords(
-        indexedTimings, 
-        structuredVocabulary // Pass structured vocab here
-      );
-      this.logger.log(`Step 4 Complete: Generated Analysis and English Data`);
+      // Prepare request payload for analysis (for DB logging)
+      analysisRequest = { indexed_word_segments: indexedTimings, vocabulary: structuredVocabulary };
+
+      // 4. Analyze Indexed Words (Final Simplified)
+      const { parsedData: finalSimplifiedAnalysis, rawResponse: rawAnalysisLlmResponse } = 
+        await this.textGeneratorService.analyzeIndexedWords(
+          indexedTimings, 
+          structuredVocabulary
+        );
+      rawAnalysisResponse = rawAnalysisLlmResponse; // Keep for DB
+      this.logger.log(`Step 4 Complete: Generated Final Simplified Analysis (Parsed)`); // Simplified step log
       
-      // 5. Combine into final structure for Text entity's analysis_data
-      const analysisData: TextAnalysisData = {
+      // 5. Combine into final structure
+      const analysisDataForDb: TextAnalysisData = {
         spanish_plain: spanishText,
-        word_timings: indexedTimings, // Store the indexed version
-        analysis_result: analysisDataFromClaude.analysis_result, // Get from Claude response
-        english_data: analysisDataFromClaude.english_data,       // Get from Claude response
+        word_timings: indexedTimings, 
+        indexed_spanish_words: finalSimplifiedAnalysis.indexed_spanish_words,
+        indexed_english_translation_words: finalSimplifiedAnalysis.indexed_english_translation_words,
+        alignment_spanish_to_english: finalSimplifiedAnalysis.alignment_spanish_to_english
       };
 
-      // 6. Create and save Text entity, linking the Audio entity
+      // 6. Create and save Text entity with logging fields STORED but not LOGGED
       const textEntity = this.textRepository.create({
         spanish_text: spanishText,
-        analysis_data: {
-          spanish_plain: spanishText,
-          word_timings: indexedTimings,
-          analysis_result: analysisDataFromClaude.analysis_result,
-          english_data: analysisDataFromClaude.english_data,
-        },
-        audio: audioEntity, // Link the generated audio entity
-        original_vocabulary: structuredVocabulary, // Save the structured vocabulary
+        llm_generation_request_prompt: generationPrompt, 
+        raw_llm_generation_response: rawGenerationResponse,
+        llm_analysis_request: analysisRequest,
+        raw_llm_analysis_response: rawAnalysisResponse,
+        analysis_data: analysisDataForDb, 
+        audio: audioEntity, 
+        original_vocabulary: structuredVocabulary, 
       });
 
-      console.log('Text entity object BEFORE final save:', JSON.stringify(textEntity, null, 2));
-
+      // Remove log of full entity before save
+      // console.log('Text entity object BEFORE final save:', JSON.stringify(textEntity, null, 2));
       const savedText = await this.textRepository.save(textEntity);
       this.logger.log(`Step 6 Complete: Text saved with ID: ${savedText.id}`);
-
       return savedText;
 
     } catch (error) {
+      // Keep simplified error log
       this.logger.error(`Text creation process failed: ${error.message}`, error.stack);
-      // Rethrow or handle appropriately
       throw error;
     }
   }

@@ -11,6 +11,20 @@ export class Text {
   @Column({ nullable: true })
   spanish_text: string;
 
+  // --- LLM I/O Logging --- START
+  @Column({ type: 'text', nullable: true })
+  llm_generation_request_prompt: string | null; // Prompt used for generateSimpleText
+
+  @Column({ type: 'text', nullable: true })
+  raw_llm_generation_response: string | null; // Raw response from generateSimpleText
+
+  @Column({ type: 'jsonb', nullable: true })
+  llm_analysis_request: object | null; // JSON payload sent to analyzeIndexedWords
+
+  @Column({ type: 'text', nullable: true })
+  raw_llm_analysis_response: string | null; // Raw JSON response from analyzeIndexedWords
+  // --- LLM I/O Logging --- END
+
   @Column({ type: 'jsonb', nullable: true })
   analysis_data: TextAnalysisData | null;
 

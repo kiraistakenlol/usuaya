@@ -4,12 +4,10 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
 import Link from 'next/link';
 import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
-import WordPopup from '@/components/WordPopup';
-import {AnalysisAnnotation, TextAnalysisData} from '@/types/analysis';
+import { TextAnalysisData, IndexedSpanishWordDetail } from '@/types/analysis';
 
 interface Text {
     id: string;
-    spanish_text: string;
     analysis_data: TextAnalysisData | null;
     original_vocabulary: { id: string; word: string; }[] | null;
     audio_id: string | null;
@@ -35,7 +33,8 @@ export default function TextDetailPage() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
     const [targetSeekTime, setTargetSeekTime] = useState<number | null>(null); // State to trigger seek
-    const [hoveredWordIndex, setHoveredWordIndex] = useState<number | null>(null);
+    const [hoveredSpanishIndex, setHoveredSpanishIndex] = useState<number | null>(null);
+    const [hoveredEnglishIndices, setHoveredEnglishIndices] = useState<Set<number>>(new Set());
     const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
     const [popupData, setPopupData] = useState<any | null>(null);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
@@ -54,7 +53,8 @@ export default function TextDetailPage() {
         setIsPlaying(false);
         setIsPlayerReady(false);
         setTargetSeekTime(null);
-        setHoveredWordIndex(null);
+        setHoveredSpanishIndex(null);
+        setHoveredEnglishIndices(new Set());
         setIsPopupVisible(false);
 
     const fetchText = async () => {
@@ -68,7 +68,7 @@ export default function TextDetailPage() {
                     else throw new Error('Failed to fetch text details');
         }
         const data: Text = await response.json();
-                console.log('Fetched text data (new structure):', data);
+                console.log('Fetched text data (final simplified structure):', data);
         setText(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -161,53 +161,32 @@ export default function TextDetailPage() {
         }
     };
 
-    const handleMouseEnter = (event: React.MouseEvent<HTMLSpanElement>, index: number) => {
-        setHoveredWordIndex(index);
-        if (hoverTimerRef.current) {
-            clearTimeout(hoverTimerRef.current);
-        }
-
-        // --- Update Hover Highlight Scope --- START ---
-        const annotationsForHoveredWord = processedAnnotationsByWordIndex.get(index);
-        let indicesToHighlight = new Set<number>();
-        if (annotationsForHoveredWord && annotationsForHoveredWord.length > 0) {
-            annotationsForHoveredWord.forEach(({ annotation }) => {
-                if (annotation.scope_indices) {
-                    annotation.scope_indices.forEach(idx => indicesToHighlight.add(idx));
-                }
-            });
-        }
-        setHoverHighlightIndices(indicesToHighlight);
-        // --- Update Hover Highlight Scope --- END ---
-
-        const timeout = setTimeout(() => {
-            const analysisEntry = text?.analysis_data?.analysis_result?.analysis_by_index?.[String(index)];
-            const word = text?.analysis_data?.word_timings?.[index]?.word || '(unknown word)';
-            
-            // Get annotations using the precomputed map
-            const annotations = processedAnnotationsByWordIndex.get(index) || [];
-
-            // Pass analysisEntry (if exists) and the found annotations (which now include instanceNumber)
-            const popupInfo = {
-                analysisEntry: analysisEntry || undefined, 
-                annotations: annotations, // Pass the array of { annotation, instanceNumber }
-                word: analysisEntry?.original_word || word 
-            };
-            setPopupData(popupInfo); 
-
-            setPopupPosition({x: event.clientX, y: event.clientY});
-            setIsPopupVisible(true);
-        }, 500); // Popup delay
-
-        hoverTimerRef.current = timeout;
+    const handleSpanishMouseEnter = (spaIndex: number) => {
+        setHoveredSpanishIndex(spaIndex);
+        const alignment = text?.analysis_data?.alignment_spanish_to_english;
+        const engIndices = alignment?.[String(spaIndex)] ?? [];
+        setHoveredEnglishIndices(new Set(engIndices));
     };
 
-    const handleMouseLeave = () => {
-        setHoveredWordIndex(null);
-        if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-        setIsPopupVisible(false);
-        setPopupData(null);
-        setHoverHighlightIndices(new Set()); // Clear hover scope highlight
+    const handleSpanishMouseLeave = () => {
+        setHoveredSpanishIndex(null);
+        setHoveredEnglishIndices(new Set());
+    };
+
+    const handleEnglishMouseEnter = (engIndex: number) => {
+        const alignment = text?.analysis_data?.alignment_spanish_to_english;
+        if (!alignment) return;
+        // Find which Spanish index (key) maps to this English index (value in array)
+        const spaIndexStr = Object.keys(alignment).find(spaIdxStr => 
+            alignment[spaIdxStr]?.includes(engIndex)
+        );
+        setHoveredSpanishIndex(spaIndexStr ? parseInt(spaIndexStr, 10) : -1);
+        setHoveredEnglishIndices(new Set([engIndex]));
+    };
+
+    const handleEnglishMouseLeave = () => {
+        setHoveredSpanishIndex(null);
+        setHoveredEnglishIndices(new Set());
     };
 
     useEffect(() => {
@@ -251,278 +230,117 @@ export default function TextDetailPage() {
     }, [isPlayerReady, isPlaying, currentTime, duration]); // Dependencies updated
     // --- Interaction Handlers --- END ---
 
-    // --- Precompute Annotations by Word Index (with Instance Numbers, Multi-Instance Flag, and Last-in-Scope Flag) --- START ---
-    const processedAnnotationsByWordIndex = useMemo(() => {
-        // Map key: word index. Value: Array of annotation details for that word.
-        const map = new Map<number, { 
-            annotation: AnalysisAnnotation; 
-            instanceNumber: number; 
-            typeHasMultipleInstances: boolean; 
-            isLastInScope: boolean; // New flag
-        }[]>();
-        const annotations = text?.analysis_data?.analysis_result?.annotations;
-        if (!annotations) return map;
-
-        const typeCounters: Record<string, number> = {};
-        const typeMaxNumbers: Record<string, number> = {};
-        const processedAnnotations: Record<string, AnalysisAnnotation & { instanceNumber: number }> = {};
-
-        // First pass: Assign instance numbers and find max number per type
-        Object.entries(annotations).forEach(([id, annotation]) => {
-            const type = annotation.type || 'unknown';
-            typeCounters[type] = (typeCounters[type] || 0) + 1;
-            const currentInstanceNumber = typeCounters[type];
-            processedAnnotations[id] = {
-                ...annotation,
-                instanceNumber: currentInstanceNumber
-            };
-            typeMaxNumbers[type] = Math.max(typeMaxNumbers[type] || 0, currentInstanceNumber);
-        });
-
-        // Second pass: Map indices to processed annotations including flags
-        Object.values(processedAnnotations).forEach(processedAnn => {
-            const type = processedAnn.type || 'unknown';
-            const typeHasMultiple = (typeMaxNumbers[type] || 0) > 1;
-            const scope = processedAnn.scope_indices;
-
-            if (scope && scope.length > 0) {
-                // Find the last index covered by this specific annotation instance
-                const maxIndexInScope = Math.max(...scope);
-                
-                scope.forEach(index => {
-                    if (!map.has(index)) {
-                        map.set(index, []);
-                    }
-                    // Determine if the current index is the last one for this annotation's scope
-                    const isLast = index === maxIndexInScope;
-
-                    map.get(index)?.push({ 
-                        annotation: processedAnn, 
-                        instanceNumber: processedAnn.instanceNumber, 
-                        typeHasMultipleInstances: typeHasMultiple, 
-                        isLastInScope: isLast // Add the new flag
-                    });
-                });
-            }
-        });
-
-        // Sort annotations for each index (optional)
-        map.forEach((annotationsList) => {
-            annotationsList.sort((a, b) => {
-                // Sort primarily to ensure badges appear consistently if multiple apply
-                if (a.annotation.type !== b.annotation.type) {
-                    return a.annotation.type.localeCompare(b.annotation.type);
-                }
-                return a.instanceNumber - b.instanceNumber;
-            });
-        });
-
-        console.log("Processed Annotations Map (with scope flags):", map); // Debugging
-        return map;
-    }, [text?.analysis_data?.analysis_result?.annotations]);
-    // --- Precompute Annotations by Word Index (...) --- END ---
-
-     // --- Hover State --- START ---
-     const [hoverHighlightIndices, setHoverHighlightIndices] = useState<Set<number>>(new Set());
-     // --- Hover State --- END ---
-
-    // --- Calculate Highlight Indices --- START ---
-    // Calculate Spanish highlight index
+    // --- Highlight Logic (based on current time and word timings) --- START ---
     const highlightSpanishIndex = useMemo(() => {
         const wordTimings = text?.analysis_data?.word_timings;
-        // Prevent highlight at exact start or end
-        if (!wordTimings || wordTimings.length === 0 || currentTime === 0 || (duration > 0 && currentTime === duration)) {
-            return null;
+        if (!wordTimings || !isPlaying) return -1;
+        // Find the first word whose end time is after the current time
+        const currentWordIndex = wordTimings.findIndex(timing => timing.end > currentTime);
+        // If not found (-1), or if the first word starts after current time, highlight nothing (-1)
+        // Otherwise, highlight the previous word (or index 0 if currentWordIndex is 0)
+        if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length -1].start) {
+            return wordTimings.length - 1; // Highlight last word if past its start
         }
-
-        // Find the index where currentTime falls within the word's start/end bounds
-        let idx = wordTimings.findLastIndex(
-            timing => currentTime >= timing.start && currentTime < timing.end
-        );
-
-        // Fallback: If not within any word's bounds but playback has started,
-        // highlight the last word that has *started* playing.
-        if (idx === -1 && currentTime > 0) {
-             // Check if currentTime is past the start of the last word but not after duration
-             const lastWord = wordTimings[wordTimings.length - 1];
-             if (currentTime >= lastWord.start && currentTime < duration) { // Use < duration here
-                 idx = wordTimings.length - 1;
-             }
-             // If currentTime is exactly duration, the initial check handles it (returns null)
-             // If currentTime is somehow > duration, idx remains -1.
+        if (currentWordIndex === -1 || (currentWordIndex === 0 && currentTime < wordTimings[0].start)) {
+            return -1;
         }
-        
-        // Return the found index (or -1 if nothing should be highlighted based on logic)
-        // Convert -1 to null for easier checking later
-        return idx !== -1 ? idx : null;
-    }, [currentTime, duration, text?.analysis_data?.word_timings]);
+        return currentWordIndex > 0 ? currentWordIndex - 1 : 0;
+    }, [currentTime, isPlaying, text?.analysis_data?.word_timings]);
 
-    // Calculate English highlight indices (based on Spanish index)
-    const englishHighlightIndices = useMemo(() => {
-        const alignmentMap = text?.analysis_data?.english_data?.spanish_index_to_english_indices;
-        if (highlightSpanishIndex === null || !alignmentMap) {
-            return new Set<number>();
-        }
-        const indices = alignmentMap[String(highlightSpanishIndex)];
-        return new Set(indices || []);
-    }, [highlightSpanishIndex, text?.analysis_data?.english_data?.spanish_index_to_english_indices]);
-    // --- Calculate Highlight Indices --- END ---
+    // Find English indices corresponding to the highlighted Spanish word
+    const highlightEnglishIndices = useMemo(() => {
+        if (highlightSpanishIndex === -1) return new Set<number>();
+        const alignment = text?.analysis_data?.alignment_spanish_to_english;
+        return new Set(alignment?.[String(highlightSpanishIndex)] ?? []);
+    }, [highlightSpanishIndex, text?.analysis_data?.alignment_spanish_to_english]);
+    // --- Highlight Logic --- END ---
 
     // --- Render Functions --- START ---
     const renderSpanishText = () => {
         const wordTimings = text?.analysis_data?.word_timings;
-        // Use the precomputed map
-        // const analysisResult = text?.analysis_data?.analysis_result;
-        if (!wordTimings) return <p>Loading Spanish text...</p>;
+        const spanishWordMap = text?.analysis_data?.indexed_spanish_words;
+        if (!wordTimings || !spanishWordMap) return <p>Analysis data missing.</p>;
+
+        if (wordTimings.length !== Object.keys(spanishWordMap).length) {
+          console.warn('Mismatch between word timings and spanish word map lengths');
+        }
 
         return wordTimings.map((timing, index) => {
+            const spanishWordDetail = spanishWordMap[String(index)];
+            if (!spanishWordDetail) {
+               console.warn(`Missing Spanish word detail for index ${index}`);
+               return <span key={index}> ERROR </span>;
+            }
+
             const isCurrentWord = index === highlightSpanishIndex;
-            const annotationsForWord = processedAnnotationsByWordIndex.get(index);
-            const isHoverHighlighted = hoverHighlightIndices.has(index);
-            // Get the analysis entry for this word index
-            const analysisEntry = text?.analysis_data?.analysis_result?.analysis_by_index?.[String(index)];
-            // Check if this word was derived from the original vocabulary
-            const isFromVocabulary = !!analysisEntry?.vocabulary_id;
+            const isVocabWord = !!spanishWordDetail.vocabulary_id;
+            const isHoverWord = index === hoveredSpanishIndex;
 
-            // Determine background color
             let backgroundColor = 'transparent';
-            if (isCurrentWord) {
-                backgroundColor = '#3b82f6';
-            } else if (isHoverHighlighted) {
-                backgroundColor = 'rgba(255, 230, 150, 0.6)';
-            } else if (hoveredWordIndex === index) {
-                backgroundColor = '#e0e0e0';
-            }
-
-            // Determine annotation CSS classes for underlines
-            let annotationClasses = '';
-            if (annotationsForWord && annotationsForWord.length > 0) {
-                const types = new Set<string>();
-                annotationsForWord.forEach(({ annotation }) => types.add(annotation.type));
-                annotationClasses = Array.from(types).map(type => `annotation-${type}`).join(' ');
-            }
+            // Use a darker blue for better contrast with white text
+            if (isCurrentWord) backgroundColor = '#1d4ed8'; // Darker Blue (e.g., blue-700)
+            else if (isHoverWord) backgroundColor = '#e0e0e0';
 
             return (
-                // Using a wrapper span to ensure relative positioning context for badges
-                <span 
-                   key={`word-wrapper-${index}`}
-                   style={{ position: 'relative', display: 'inline-block'}} // Context for absolute badge
-                >
+                <span key={index} style={{ display: 'inline-block' }}>
                     <span
-                        key={`word-${index}`} 
                         onClick={() => handleWordClick(index)}
-                        onMouseEnter={(e) => handleMouseEnter(e, index)}
-                        onMouseLeave={handleMouseLeave}
-                        className={annotationClasses} // Apply classes for underlines
-                        style={{ 
+                        onMouseEnter={() => handleSpanishMouseEnter(index)}
+                        onMouseLeave={handleSpanishMouseLeave}
+                        style={{
                             cursor: 'pointer',
-                            color: isCurrentWord ? 'white' : '#1a1a1a',
-                            transition: 'color 0.2s ease, background-color 0.2s ease',
-                            fontSize: '16px',
-                            lineHeight: '1.6',
-                            // Apply bold if it's a vocabulary word OR the current playback word
-                            fontWeight: isCurrentWord || isFromVocabulary ? 'bold' : 'normal',
-                            // position: 'relative', // Moved to wrapper span
-                            display: 'inline-block',
-                            padding: '0 2px',
-                            backgroundColor: backgroundColor, 
-                            borderRadius: '4px',
-                            minWidth: '1em',
-                            textAlign: 'center',
-                            // marginRight: '2px', // Remove margin, use padding if needed for badge space visually
-                            // paddingRight: annotationsForWord && annotationsForWord.length > 0 ? '8px' : '2px', // Add padding if badges visually overlap word
+                            padding: '1px 2px',
+                            margin: '0 1px',
+                            borderRadius: '3px',
+                            backgroundColor: backgroundColor,
+                            // Explicitly set default color to dark grey
+                            color: isCurrentWord ? 'white' : '#333',
+                            fontWeight: isVocabWord ? 'bold' : (isCurrentWord ? 'bold' : 'normal'),
+                            border: isHoverWord ? '1px solid #ccc' : 'none',
                         }}
+                        className="word-span"
                     >
-                      {timing.word}
-                    </span>
-                    {/* Badges container - absolutely positioned */} 
-                    <span 
-                       style={{
-                           position: 'absolute', 
-                           bottom: '-4px', // Position below the word
-                           right: '-2px', // Position to the right
-                           lineHeight: 1, 
-                           whiteSpace: 'nowrap', // Prevent badges from wrapping
-                           pointerEvents: 'none', // Don't interfere with word hover
-                           zIndex: 2, // Ensure badges are above underlines/backgrounds
-                       }}
-                    >
-                        {annotationsForWord && annotationsForWord.map(({ annotation, instanceNumber, typeHasMultipleInstances, isLastInScope }, badgeIndex) => (
-                            // Only render the badge span if the type has multiple instances AND this is the last word in its scope
-                            (typeHasMultipleInstances && isLastInScope) && (
-                                <span 
-                                   key={`badge-${index}-${badgeIndex}`} 
-                                   style={{
-                                       display: 'inline-block',
-                                       marginLeft: '1px', 
-                                       padding: '0px 3px',
-                                       fontSize: '9px',
-                                       fontWeight: 'bold',
-                                       color: '#fff',
-                                       borderRadius: '3px',
-                                       backgroundColor: getAnnotationTypeBadgeColor(annotation.type), 
-                                   }}
-                                >
-                                    {instanceNumber}
-                                </span>
-                            )
-                        ))}
+                        {spanishWordDetail.text}
                     </span>
                     {' '}
-                 </span>
+                </span>
             );
         });
     };
 
     const renderEnglishText = () => {
-        const englishTokens = text?.analysis_data?.english_data?.tokens;
-        if (!englishTokens) return <p>Loading English text...</p>;
+        const englishTokens = text?.analysis_data?.indexed_english_translation_words;
+        if (!englishTokens) return <p>English translation not available.</p>;
 
-        // Regex to match punctuation that shouldn't have a preceding space
-        const noPrecedingSpaceRegex = /^[.,!?;:')\]}]|^(?:'(?:s|ll|re|ve|d|m))|^n't/i;
+        return englishTokens.map((token, index) => {
+            const isHighlighted = highlightEnglishIndices.has(index);
+            const isHoverHighlighted = hoveredEnglishIndices.has(index);
 
-        return englishTokens.map((token, index_eng) => {
-            const isHighlighted = englishHighlightIndices.has(index_eng);
+            let backgroundColor = 'transparent';
+            if (isHighlighted) backgroundColor = '#a5d6a7';
+            else if (isHoverHighlighted) backgroundColor = '#e0e0e0';
+
             return (
-                <span
-                    key={`eng-${index_eng}`}
-                    style={{
-                        backgroundColor: isHighlighted ? '#3b82f6' : 'transparent',
-                        color: isHighlighted ? 'white' : 'inherit',
-                        borderRadius: '4px',
-                        padding: '0 2px',
-                        transition: 'color 0.2s ease, background-color 0.2s ease',
-                    }}
-                >
-          {token.text}
-        </span>
+                <span key={index} style={{ display: 'inline-block' }}>
+                    <span
+                        onMouseEnter={() => handleEnglishMouseEnter(index)}
+                        onMouseLeave={handleEnglishMouseLeave}
+                        style={{
+                            padding: '1px 2px',
+                            margin: '0 1px',
+                            borderRadius: '3px',
+                            backgroundColor: backgroundColor,
+                            border: isHoverHighlighted ? '1px solid #ccc' : 'none',
+                        }}
+                        className="word-span"
+                    >
+                        {token}
+                    </span>
+                    {' '}
+                </span>
             );
-        }).reduce<React.ReactNode[]>((prev, curr, index) => {
-            const currentTokenText = curr.props.children as string;
-            // Add space only if it's not the first token AND current token doesn't start with attaching punctuation
-            const separator = (index > 0 && !noPrecedingSpaceRegex.test(currentTokenText)) ? ' ' : '';
-            return [...prev, separator, curr];
-        }, []).filter(node => node !== ''); // Filter out empty strings if any separator was empty
+        });
     };
-
-    // Need to define getAnnotationTypeBadgeColor or import if moved
-    // Helper function to get badge color based on Annotation Type
-    const getAnnotationTypeBadgeColor = (type: string): string => {
-        const lowerType = type.toLowerCase();
-        switch (lowerType) {
-          case 'grammar':
-            return '#1f77b4'; // Blue
-          case 'slang':
-            return '#2ca02c'; // Green
-          case 'idiom':
-            return '#9467bd'; // Purple
-          case 'cultural':
-          case 'cultural_note':
-            return '#ff7f0e'; // Orange
-          default:
-            return '#6c757d'; // Default Gray
-        }
-     };
 
     // --- Render Functions --- END ---
 
@@ -621,7 +439,7 @@ export default function TextDetailPage() {
                         )}
 
                         {/* English Translation Block */}
-                        {text.analysis_data?.english_data?.tokens && (
+                        {text.analysis_data?.indexed_english_translation_words && (
                             <div
                                 style={{
                                     marginTop: '20px',
@@ -658,11 +476,6 @@ export default function TextDetailPage() {
                                     ))}
                                 </ul>
                            </div>
-                        )}
-
-                        {/* Popup Rendering */}
-                        {isPopupVisible && popupData && popupPosition && (
-                            <WordPopup data={popupData} position={popupPosition}/>
                         )}
           </div>
         </div>
