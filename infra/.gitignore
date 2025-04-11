@@ -1,0 +1,8 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+.terraform/
+
+# Variable files that might contain secrets
+# *.tfvars 
