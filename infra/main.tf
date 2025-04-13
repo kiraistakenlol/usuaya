@@ -301,60 +301,59 @@ resource "aws_apprunner_service" "backend_service" {
 }
 
 # --- Amplify (Frontend Hosting) ---
-# TODO: Uncomment and configure once GitHub repo URL is set
-# resource "aws_amplify_app" "frontend_app" {
-#   name       = "${var.project_name}-frontend-app"
-#   repository = var.github_repo_url
-#   oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
+resource "aws_amplify_app" "frontend_app" {
+  name       = "${var.project_name}-frontend-app"
+  repository = var.github_repo_url
+  oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
 
-#   # Build settings (example for Next.js)
-#   build_spec = <<-EOT
-#     version: 1
-#     frontend:
-#       phases:
-#         preBuild:
-#           commands:
-#             - cd frontend
-#             - npm ci
-#         build:
-#           commands:
-#             - npm run build
-#       artifacts:
-#         baseDirectory: frontend/.next
-#         files:
-#           - '**/*'
-#       cache:
-#         paths:
-#           - frontend/node_modules/**/*
-#   EOT
+  # Build settings for Next.js
+  build_spec = <<-EOT
+    version: 1
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - cd frontend
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: frontend/.next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - frontend/node_modules/**/*
+  EOT
 
-#   # Environment variables for the frontend build/runtime
-#   # environment_variables = {
-#   #   NEXT_PUBLIC_API_URL = aws_apprunner_service.backend_service.service_url # Or your custom domain
-#   # }
+  # Environment variables for the frontend build/runtime
+  environment_variables = {
+    NEXT_PUBLIC_API_URL = "https://${aws_apprunner_service.backend_service.service_url}"
+  }
 
-#   # Custom rules (e.g., for Next.js routing)
-#   # custom_rules {
-#   #   source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
-#   #   target = "/index.html"
-#   #   status = "200"
-#   # }
+  # Custom rules for Next.js routing
+  custom_rules {
+    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
+    target = "/index.html"
+    status = "200"
+  }
 
-#   tags = {
-#     Name = "${var.project_name}-frontend-app"
-#   }
-# }
+  tags = {
+    Name = "${var.project_name}-frontend-app"
+  }
+}
 
-# resource "aws_amplify_branch" "frontend_branch" {
-#   app_id      = aws_amplify_app.frontend_app.id
-#   branch_name = var.frontend_branch_name
-#   stage       = "PRODUCTION" # Or DEVELOPMENT, etc.
-#   enable_auto_build = true
+resource "aws_amplify_branch" "frontend_branch" {
+  app_id      = aws_amplify_app.frontend_app.id
+  branch_name = var.frontend_branch_name
+  stage       = "PRODUCTION"
+  enable_auto_build = true
 
-#   tags = {
-#     Name = "${var.project_name}-frontend-branch-${var.frontend_branch_name}"
-#   }
-# }
+  tags = {
+    Name = "${var.project_name}-frontend-branch-${var.frontend_branch_name}"
+  }
+}
 
 # Need to allow RDS Security group ingress from App Runner
 # This depends on App Runner creating its own outbound Security Group when using VPC egress.
