@@ -346,12 +346,12 @@ resource "aws_amplify_app" "frontend_app" {
 
 resource "aws_amplify_branch" "frontend_branch" {
   app_id      = aws_amplify_app.frontend_app.id
-  branch_name = var.frontend_branch_name
+  branch_name = "master"
   stage       = "PRODUCTION"
   enable_auto_build = true
 
   tags = {
-    Name = "${var.project_name}-frontend-branch-${var.frontend_branch_name}"
+    Name = "${var.project_name}-frontend-branch-master"
   }
 }
 
