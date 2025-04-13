@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
+import { API_URL, fetchWithErrorHandling } from '../utils/api';
 
 interface Phrase {
   id: number;
   text: string;
 }
-
-const API_URL = 'http://localhost:8000'; // Backend URL
 
 export default function PhrasesPage() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);
@@ -20,11 +19,7 @@ export default function PhrasesPage() {
     const fetchPhrases = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/phrases`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch phrases');
-        }
-        const data: Phrase[] = await response.json();
+        const data = await fetchWithErrorHandling(`${API_URL}/phrases`);
         setPhrases(data);
         setError(null);
       } catch (err) {
@@ -43,17 +38,13 @@ export default function PhrasesPage() {
     if (!newPhrase.trim()) return;
 
     try {
-      const response = await fetch(`${API_URL}/phrases`, {
+      const addedPhrase = await fetchWithErrorHandling(`${API_URL}/phrases`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text: newPhrase }),
       });
-      if (!response.ok) {
-        throw new Error('Failed to add phrase');
-      }
-      const addedPhrase: Phrase = await response.json();
       setPhrases([...phrases, addedPhrase]);
       setNewPhrase(''); // Clear input
       setError(null);
@@ -66,12 +57,9 @@ export default function PhrasesPage() {
   // Delete a phrase
   const handleDeletePhrase = async (id: number) => {
     try {
-      const response = await fetch(`${API_URL}/phrases/${id}`, {
+      await fetchWithErrorHandling(`${API_URL}/phrases/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete phrase');
-      }
       setPhrases(phrases.filter((phrase) => phrase.id !== id));
       setError(null);
     } catch (err) {

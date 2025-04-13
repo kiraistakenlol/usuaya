@@ -5,17 +5,27 @@ import {useParams} from 'next/navigation';
 import Link from 'next/link';
 import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
 import { TextAnalysisData, IndexedSpanishWordDetail } from '@/types/analysis';
+import { API_URL, fetchWithErrorHandling } from '../../../utils/api';
 
-interface Text {
-    id: string;
-    analysis_data: TextAnalysisData | null;
-    original_vocabulary: { id: string; word: string; }[] | null;
-    audio_id: string | null;
-    created_at: string;
-    updated_at: string;
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+  confidence: number;
 }
 
-const API_URL = 'http://localhost:8000';
+interface Text {
+  id: string;
+  spanish_text: string;
+  english_translation: string;
+  audio: {
+    id: string;
+    file_id: string;
+    word_timings: WordTiming[];
+  } | null;
+  analysis_data: any;
+  created_at: string;
+}
 
 export default function TextDetailPage() {
   const params = useParams();
@@ -62,16 +72,10 @@ export default function TextDetailPage() {
       setError(null);
             setAudioError(null);
       try {
-        const response = await fetch(`${API_URL}/texts/${textId}`);
-        if (!response.ok) {
-                    if (response.status === 404) throw new Error('Text not found');
-                    else throw new Error('Failed to fetch text details');
-        }
-        const data: Text = await response.json();
-                console.log('Fetched text data (final simplified structure):', data);
+        const data = await fetchWithErrorHandling(`${API_URL}/texts/${textId}`);
         setText(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        setError(err instanceof Error ? err.message : 'Error fetching text');
         console.error(err);
       } finally {
         setLoading(false);
@@ -82,7 +86,7 @@ export default function TextDetailPage() {
 
     // Effect to fetch audio blob when text is loaded
     useEffect(() => {
-        if (text && text.audio_id && !audioBlobUrl && !isAudioLoading) {
+        if (text && text.audio && !audioBlobUrl && !isAudioLoading) {
             let objectUrl: string | null = null;
             const fetchAudio = async () => {
                 setIsAudioLoading(true);

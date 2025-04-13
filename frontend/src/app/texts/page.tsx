@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import CreateTextForm from '@/components/CreateTextForm';
 import RelativeTimeDisplay from '@/components/RelativeTimeDisplay';
+import { API_URL, fetchWithErrorHandling } from '../../utils/api';
 
 // Interfaces (can be moved to a types file later)
 interface Phrase {
@@ -27,8 +28,6 @@ interface Text {
   created_at: string;
 }
 
-const API_URL = 'http://localhost:8000';
-
 export default function TextsPage() {
   const [texts, setTexts] = useState<Text[]>([]);
   const [vocabulary, setVocabulary] = useState<Phrase[]>([]); // Existing phrases
@@ -43,9 +42,7 @@ export default function TextsPage() {
   const fetchTexts = async () => {
     setLoadingTexts(true);
     try {
-      const response = await fetch(`${API_URL}/texts`);
-      if (!response.ok) throw new Error('Failed to fetch texts');
-      const data: Text[] = await response.json();
+      const data = await fetchWithErrorHandling(`${API_URL}/texts`);
       setTexts(data);
       setError(null);
     } catch (err) {
@@ -60,9 +57,7 @@ export default function TextsPage() {
   const fetchVocabulary = async () => {
     setLoadingVocab(true);
     try {
-      const response = await fetch(`${API_URL}/phrases`);
-      if (!response.ok) throw new Error('Failed to fetch vocabulary');
-      const data: Phrase[] = await response.json();
+      const data = await fetchWithErrorHandling(`${API_URL}/phrases`);
       setVocabulary(data);
       setError(null);
     } catch (err) {
@@ -99,15 +94,11 @@ export default function TextsPage() {
     setError(null);
 
     try {
-        const response = await fetch(`${API_URL}/texts`, {
+        await fetchWithErrorHandling(`${API_URL}/texts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ vocabulary: combinedVocab }),
         });
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Failed to generate text'}));
-            throw new Error(errorData.detail || 'Failed to generate text');
-        }
         await fetchTexts(); 
         setManualInput('');
     } catch (err) {
