@@ -33,8 +33,6 @@ const AudioPlayer = forwardRef<AudioPlayerActions, AudioPlayerProps>((
 ) => {
     const playerRef = useRef<ReactPlayer>(null);
     const [isPlayerReadyInternal, setIsPlayerReadyInternal] = useState(false);
-    const lastReportedTimeRef = useRef<number>(0);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // --- Imperative Handle: Expose togglePlayPause --- START ---
     useImperativeHandle(ref, () => ({
