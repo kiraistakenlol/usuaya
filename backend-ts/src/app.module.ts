@@ -31,6 +31,9 @@ import { LlmModule } from './llm/llm.module';
         database: configService.get('DB_DATABASE', 'vibe_dev'),
         entities: [Text, Phrase, Audio],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
       inject: [ConfigService],
     }),

@@ -2,6 +2,8 @@
 
 This directory contains the Terraform configuration files used to define, provision, and manage the AWS infrastructure for the **Usuaya** project.
 
+**Important:** The `infra/` directory is located at the root of the project repository.
+
 **Target Environment:**
 
 *   **AWS Region:** `us-east-1`
@@ -16,6 +18,21 @@ This directory contains the Terraform configuration files used to define, provis
 *   **`outputs.tf`**: Defines outputs (RDS endpoint, App Runner URL, Amplify App URL, ECR URI, S3 Bucket Name).
 *   **`providers.tf`**: Configures the AWS provider (version, region=`us-east-1`).
 *   **`.gitignore`**: Excludes Terraform state files (`.terraform*`, `*.tfstate*`, `.terraform.lock.hcl`).
+
+## Docker Image Building
+
+**Important:** When building Docker images for App Runner deployment, ensure you build for Linux architecture:
+
+```bash
+# From project root
+docker buildx build --platform linux/amd64 -t 480238144173.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest -f backend-ts/Dockerfile backend-ts
+```
+
+After building, push the image to ECR:
+
+```bash
+docker push 480238144173.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest
+```
 
 ## Usage
 

@@ -35,9 +35,8 @@ variable "rds_username" {
 }
 
 variable "rds_password_secret_arn" {
-  description = "ARN of the AWS Secrets Manager secret containing the RDS password"
+  description = "ARN of the Secrets Manager secret for RDS password"
   type        = string
-  default     = "arn:aws:secretsmanager:us-east-1:480238144173:secret:usuaya/rds/password-RATQvG"
 }
 
 variable "s3_audio_bucket_name" {
@@ -47,13 +46,38 @@ variable "s3_audio_bucket_name" {
 }
 
 variable "github_oauth_token_secret_arn" {
-  description = "ARN of the AWS Secrets Manager secret containing the GitHub personal access token for Amplify"
+  description = "ARN of the Secrets Manager secret for GitHub PAT (for Amplify)"
   type        = string
-  default     = "arn:aws:secretsmanager:us-east-1:480238144173:secret:usuaya/github/pat-NdueOl"
+  # default     = "" # Or make it optional if Amplify isn't always used
 }
 
 variable "frontend_branch_name" {
   description = "The Git branch Amplify should deploy"
   type        = string
   default     = "main"
+}
+
+variable "anthropic_api_key_secret_arn" {
+  description = "ARN of the Secrets Manager secret for Anthropic API Key"
+  type        = string
+}
+
+variable "elevenlabs_api_key_secret_arn" {
+  description = "ARN of the Secrets Manager secret for ElevenLabs API Key"
+  type        = string
+}
+
+variable "elevenlabs_voice_id_secret_arn" {
+  description = "ARN of the Secrets Manager secret for ElevenLabs Voice ID"
+  type        = string
+}
+
+variable "grok_api_key_secret_arn" {
+  description = "ARN of the Secrets Manager secret for Grok API Key"
+  type        = string
+}
+
+variable "github_repo_url" {
+  description = "URL of the GitHub repository"
+  type        = string
 }

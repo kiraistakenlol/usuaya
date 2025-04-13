@@ -34,6 +34,26 @@ data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = var.github_oauth_token_secret_arn
 }
 
+# Retrieve the Anthropic API key
+data "aws_secretsmanager_secret_version" "anthropic_api_key" {
+  secret_id = var.anthropic_api_key_secret_arn
+}
+
+# Retrieve the ElevenLabs API key
+data "aws_secretsmanager_secret_version" "elevenlabs_api_key" {
+  secret_id = var.elevenlabs_api_key_secret_arn
+}
+
+# Retrieve the ElevenLabs Voice ID
+data "aws_secretsmanager_secret_version" "elevenlabs_voice_id" {
+  secret_id = var.elevenlabs_voice_id_secret_arn
+}
+
+# Retrieve the Grok API key
+data "aws_secretsmanager_secret_version" "grok_api_key" {
+  secret_id = var.grok_api_key_secret_arn
+}
+
 
 # --- RDS (Database) ---
 resource "aws_db_subnet_group" "rds_subnet_group" {
@@ -44,19 +64,18 @@ resource "aws_db_subnet_group" "rds_subnet_group" {
   }
 }
 
-# Security Group for RDS allowing access from App Runner (needs App Runner SG later)
+# Security Group for RDS allowing public access
 resource "aws_security_group" "rds_sg" {
   name        = "${var.project_name}-rds-sg"
-  description = "Allow PostgreSQL traffic from App Runner"
+  description = "Allow ALL PostgreSQL traffic from public internet"
   vpc_id      = data.aws_vpc.default.id
 
-  # Temporarily allow access from the default SG for initial setup.
-  # TODO: Refine this to allow access specifically from App Runner.
+  # Allow PostgreSQL traffic from anywhere
   ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [data.aws_security_group.default.id]
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Allow all outbound traffic
@@ -76,7 +95,7 @@ resource "aws_security_group" "rds_sg" {
 resource "aws_db_instance" "postgres_db" {
   allocated_storage      = 20 # GB, Free tier eligible storage size with t3.micro
   engine                 = "postgres"
-  engine_version         = "15.6" # Use a specific minor version for stability
+  engine_version         = "15.7" # Changed from 15.6 - Verify this version is available
   instance_class         = var.rds_instance_class
   db_name                = var.rds_db_name
   username               = var.rds_username
@@ -84,7 +103,7 @@ resource "aws_db_instance" "postgres_db" {
   db_subnet_group_name   = aws_db_subnet_group.rds_subnet_group.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   skip_final_snapshot    = true  # For easier cleanup during testing
-  publicly_accessible    = false # Keep DB private
+  publicly_accessible    = true  # Make DB publicly accessible
   apply_immediately      = true  # Useful during development
 
   tags = {
@@ -201,21 +220,13 @@ resource "aws_iam_policy" "apprunner_access_policy" {
         Effect = "Allow"
         Resource = [
           var.rds_password_secret_arn,
-          var.github_oauth_token_secret_arn
-          # Add other secret ARNs if needed
+          var.github_oauth_token_secret_arn,
+          var.anthropic_api_key_secret_arn,
+          var.elevenlabs_api_key_secret_arn,
+          var.elevenlabs_voice_id_secret_arn,
+          var.grok_api_key_secret_arn
         ]
       }
-      # Add CloudWatch Logs permissions if not using default App Runner role
-      # {
-      #   Action = [
-      #     "logs:CreateLogStream",
-      #     "logs:CreateLogGroup",
-      #     "logs:DescribeLogStreams",
-      #     "logs:PutLogEvents"
-      #   ]
-      #   Effect = "Allow"
-      #   Resource = "arn:aws:logs:${var.aws_region}:*:log-group:/aws/apprunner/*:*"
-      # }
     ]
   })
 }
@@ -232,42 +243,56 @@ resource "aws_apprunner_service" "backend_service" {
 
   source_configuration {
     image_repository {
-      image_identifier      = "${aws_ecr_repository.backend_repo.repository_url}:latest" # Use :latest or a specific tag
+      image_identifier      = "${aws_ecr_repository.backend_repo.repository_url}:latest"
       image_repository_type = "ECR"
       image_configuration {
-        port = "8000" # Assuming NestJS runs on port 8000 inside the container
+        port = "8000" # CONFIRM: Port your NestJS app listens on (e.g., 3000 or 8000)
+        runtime_environment_variables = { # Renamed from environment_variables as per v5.x docs for clarity
+          # --- Database Connection ---
+          DB_HOST     = aws_db_instance.postgres_db.address
+          DB_PORT     = tostring(aws_db_instance.postgres_db.port)
+          DB_USERNAME = var.rds_username
+          DB_PASSWORD = data.aws_secretsmanager_secret_version.rds_password.secret_string
+          DB_DATABASE = var.rds_db_name
+
+          # --- LLM Keys (Referencing Secrets) ---
+          ANTHROPIC_API_KEY = data.aws_secretsmanager_secret_version.anthropic_api_key.secret_string
+          GROK_API_KEY      = data.aws_secretsmanager_secret_version.grok_api_key.secret_string
+          GROK_MODEL_NAME   = "grok-1" # Added Grok model name
+
+          # --- Audio Keys (Referencing Secrets) ---
+          ELEVENLABS_API_KEY  = data.aws_secretsmanager_secret_version.elevenlabs_api_key.secret_string
+          ELEVENLABS_VOICE_ID = data.aws_secretsmanager_secret_version.elevenlabs_voice_id.secret_string
+          ELEVENLABS_MODEL_ID = "eleven_multilingual_v2" # Added ElevenLabs model ID
+
+          # --- Other Config ---
+          NODE_ENV = "production"
+          # Add any other non-secret env vars your app needs
+        }
       }
     }
     authentication_configuration {
       access_role_arn = aws_iam_role.apprunner_execution_role.arn
     }
-    auto_deployments_enabled = true # Re-deploy when new image pushed to ECR
+    auto_deployments_enabled = true
   }
 
   instance_configuration {
     cpu    = "1024" # 1 vCPU
     memory = "2048" # 2 GB RAM
-    # Note: port configuration is inside source_configuration.image_repository.image_configuration
   }
 
-  # Networking configuration (using default VPC for now)
   network_configuration {
     egress_configuration {
-      egress_type = "DEFAULT" # Allow outbound traffic to the internet
+      egress_type = "DEFAULT"
     }
-    # ingress_configuration {
-    #   is_publicly_accessible = true # Make the service accessible from the internet
-    # }
   }
 
+  # Optional: Add health check config if needed
   # health_check_configuration {
-  #   protocol            = "TCP"
-  #   port                = "8000"        # Port the container listens on for health checks
-  #   path                = "/api/health" # Assuming a health check endpoint exists
-  #   interval            = 10            # seconds
-  #   timeout             = 5             # seconds
-  #   healthy_threshold   = 1
-  #   unhealthy_threshold = 2
+  #   protocol = "TCP" # Or HTTP
+  #   port     = "8000" # Match image_configuration.port
+  #   # path = "/healthz" # If using HTTP
   # }
 
   tags = {
