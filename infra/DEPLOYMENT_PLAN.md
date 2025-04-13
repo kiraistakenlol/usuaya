@@ -48,7 +48,7 @@ This plan outlines the steps to provision the necessary AWS infrastructure using
     *   `[x]` Add SSL configuration to TypeORM in `app.module.ts` to connect to RDS.
     *   `[x]` Run `terraform apply -var-file="secrets.tfvars" -replace="aws_apprunner_service.backend_service"` to update App Runner service.
 *   `[x]` **Record App Runner URL:** App Runner URL: `fhuxxh9rdx.us-east-1.awsapprunner.com`
-*   `[ ]` **Verify Backend:** Access the App Runner service URL. Test API endpoints. Check App Runner logs.
+*   `[x]` **Verify Backend:** Access the App Runner service URL. Test API endpoints. Check App Runner logs.
 
 ## Phase 4: Frontend Deployment
 
