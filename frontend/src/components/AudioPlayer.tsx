@@ -98,4 +98,6 @@ const AudioPlayer = forwardRef<AudioPlayerActions, AudioPlayerProps>((
     );
 });
 
+AudioPlayer.displayName = 'AudioPlayer'; // Added display name for ESLint rule
+
 export default AudioPlayer; 

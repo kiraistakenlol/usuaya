@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
-import CreateTextForm from '@/components/CreateTextForm';
+// import CreateTextForm from '@/components/CreateTextForm'; // Removed unused import
 import RelativeTimeDisplay from '@/components/RelativeTimeDisplay';
 import { API_URL, fetchWithErrorHandling } from '../../utils/api';
 

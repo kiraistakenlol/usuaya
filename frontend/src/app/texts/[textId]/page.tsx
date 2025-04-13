@@ -165,34 +165,6 @@ export default function TextDetailPage() {
         }
     };
 
-    const handleSpanishMouseEnter = (spaIndex: number) => {
-        setHoveredSpanishIndex(spaIndex);
-        const alignment = text?.analysis_data?.alignment_spanish_to_english;
-        const engIndices = alignment?.[String(spaIndex)] ?? [];
-        setHoveredEnglishIndices(new Set(engIndices));
-    };
-
-    const handleSpanishMouseLeave = () => {
-        setHoveredSpanishIndex(null);
-        setHoveredEnglishIndices(new Set());
-    };
-
-    const handleEnglishMouseEnter = (engIndex: number) => {
-        const alignment = text?.analysis_data?.alignment_spanish_to_english;
-        if (!alignment) return;
-        // Find which Spanish index (key) maps to this English index (value in array)
-        const spaIndexStr = Object.keys(alignment).find(spaIdxStr => 
-            alignment[spaIdxStr]?.includes(engIndex)
-        );
-        setHoveredSpanishIndex(spaIndexStr ? parseInt(spaIndexStr, 10) : -1);
-        setHoveredEnglishIndices(new Set([engIndex]));
-    };
-
-    const handleEnglishMouseLeave = () => {
-        setHoveredSpanishIndex(null);
-        setHoveredEnglishIndices(new Set());
-    };
-
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             const target = event.target as HTMLElement;
@@ -289,8 +261,6 @@ export default function TextDetailPage() {
                 <span key={index} style={{ display: 'inline-block' }}>
                     <span
                         onClick={() => handleWordClick(index)}
-                        onMouseEnter={() => handleSpanishMouseEnter(index)}
-                        onMouseLeave={handleSpanishMouseLeave}
                         style={{
                             cursor: 'pointer',
                             padding: '1px 2px',
@@ -327,8 +297,6 @@ export default function TextDetailPage() {
             return (
                 <span key={index} style={{ display: 'inline-block' }}>
                     <span
-                        onMouseEnter={() => handleEnglishMouseEnter(index)}
-                        onMouseLeave={handleEnglishMouseLeave}
                         style={{
                             padding: '1px 2px',
                             margin: '0 1px',
