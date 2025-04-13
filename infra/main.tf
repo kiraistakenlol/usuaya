@@ -332,8 +332,8 @@ resource "aws_amplify_app" "frontend_app" {
     NEXT_PUBLIC_API_URL = "https://${aws_apprunner_service.backend_service.service_url}"
   }
 
-  # Custom rules for Next.js routing
-  custom_rules {
+  # Custom rule for Next.js routing
+  custom_rule {
     source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
     target = "/index.html"
     status = "200"
