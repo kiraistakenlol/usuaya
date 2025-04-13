@@ -52,14 +52,14 @@ This plan outlines the steps to provision the necessary AWS infrastructure using
 
 ## Phase 4: Frontend Deployment
 
-*   `[ ]` **Configure Backend URL:** Ensure frontend code uses an environment variable (`NEXT_PUBLIC_API_URL`) for the backend API URL.
-*   `[ ]` **Create/Update Amplify App (Terraform):**
-    *   `[ ]` Ensure `aws_amplify_app` resource (`usuaya-frontend-app`) in Terraform is configured (repo URL, branch, platform).
+*   `[x]` **Configure Backend URL:** Ensure frontend code uses an environment variable (`NEXT_PUBLIC_API_URL`) for the backend API URL.
+*   `[x]` **Create/Update Amplify App (Terraform):**
+    *   `[x]` Ensure `aws_amplify_app` resource (`usuaya-frontend-app`) in Terraform is configured (repo URL, branch, platform).
     *   `[ ]` Run `terraform plan/apply` again (providing secret ARNs and repo URL).
 *   `[ ]` **Configure Amplify Build:**
     *   `[ ]` Access Amplify console (`us-east-1`) for the `usuaya-frontend-app`.
     *   `[ ]` Go to "Environment variables".
-    *   `[ ]` Add `NEXT_PUBLIC_API_URL` with the value of your App Runner service URL.
+    *   `[x]` Add `NEXT_PUBLIC_API_URL` with the value of your App Runner service URL.
     *   `[ ]` Verify build settings/`amplify.yml` (if used).
 *   `[ ]` **Trigger Build:** Trigger first build via Amplify console or Git push.
 *   `[ ]` **Record Amplify URL:** Get the default Amplify app URL (e.g., `https://main.d12345.amplifyapp.com`).
