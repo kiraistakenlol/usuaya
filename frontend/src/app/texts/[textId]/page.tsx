@@ -211,7 +211,7 @@ export default function TextDetailPage() {
         const wordTimings = text?.analysis_data?.word_timings;
         if (!wordTimings || !isPlaying) return -1;
         // Find the first word whose end time is after the current time
-        const currentWordIndex = wordTimings.findIndex(timing => timing.end > currentTime);
+        const currentWordIndex = wordTimings.findIndex((timing: WordTiming) => timing.end > currentTime);
         // If not found (-1), or if the first word starts after current time, highlight nothing (-1)
         // Otherwise, highlight the previous word (or index 0 if currentWordIndex is 0)
         if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length -1].start) {
