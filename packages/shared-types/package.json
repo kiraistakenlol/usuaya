@@ -1,0 +1,16 @@
+{
+  "name": "@usuaya/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for the Usuaya project",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0" 
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1"
+  }
+} 

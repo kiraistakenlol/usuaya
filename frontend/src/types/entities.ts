@@ -27,7 +27,7 @@ export interface Text {
   spanish_text: string;
   analysis_data: TextAnalysisData | null;
   original_vocabulary: VocabularyItem[] | null;
-  audio: AudioData | null;
+  audio_id: string | null;
   created_at: string;
   updated_at: string;
   // Removed english_translation as it's not directly on the backend DTO

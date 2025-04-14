@@ -1,25 +1,14 @@
 import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
 import { Expose, Transform, Type } from 'class-transformer';
-import { AudioResponseDto } from './audio.dto';
-import { TextAnalysisData } from '../types/analysis-data.types';
+// Remove import of local AudioResponseDto as we use shared AudioData
+// import { AudioResponseDto } from './audio.dto';
+// Import shared types
+import { TextAnalysisData, VocabularyItem, CreateTextDto as SharedCreateTextDto, TextData, AudioData, Phrase } from '@usuaya/shared-types';
 
-// Define a simple class for vocabulary items
-export class VocabularyItemDto {
-  @IsString()
-  @Expose()
-  id: string;
+// Rename imported CreateTextDto to avoid conflict with local (if any)
+export { SharedCreateTextDto as CreateTextDto };
 
-  @IsString()
-  @Expose()
-  word: string;
-}
-
-export class CreateTextDto {
-  @IsArray()
-  @IsString({ each: true })
-  vocabulary: string[];
-}
-
+// Keep backend-specific UpdateTextDto
 export class UpdateTextDto {
   @IsString()
   @IsOptional()
@@ -30,65 +19,42 @@ export class UpdateTextDto {
   audio_file_id?: string;
 }
 
+// Remove local VocabularyItemDto (use shared VocabularyItem)
+// Remove local TextResponseDto (use shared TextData)
+
+// You might not need this file at all if all DTOs are now shared or defined elsewhere.
+// However, if UpdateTextDto is used, keep the file.
+// Or, redefine TextResponseDto using shared types if transformations are still needed.
+// Example: Redefining TextResponseDto to handle transformations while using shared base types
 export class TextResponseDto {
-  @IsUUID()
-  @Expose()
-  id: string;
+  @Expose() @IsUUID() id: string;
+  @Expose() @IsString() spanish_text: string;
+  @Expose() @IsOptional() analysis_data: TextAnalysisData | null;
+  
+  @Expose() 
+  @IsArray() 
+  @IsOptional() 
+  @Type(() => VocabularyItem) // Use shared VocabularyItem
+  original_vocabulary: VocabularyItem[] | null;
 
-  @IsString()
-  @Expose()
-  spanish_text: string;
-
-  @IsOptional()
-  @Expose()
-  analysis_data: TextAnalysisData | null;
-
-  @IsArray()
-  @IsOptional()
-  @Expose()
-  @Type(() => VocabularyItemDto)
-  original_vocabulary: VocabularyItemDto[] | null;
-
-  @IsUUID()
-  @IsOptional()
-  @Expose()
+  @Expose() 
+  @IsUUID() 
+  @IsOptional() 
   audio_id: string | null;
 
+  @Expose()
+  @IsArray()
   @IsOptional()
-  @Expose()
-  @Transform(({ value, obj }) => {
-    if (value && value.id) {
-      return value;
-    }
-    if (obj.audio_id && obj.audio) {
-      return {
-        id: obj.audio.id || obj.audio_id,
-        file_id: obj.audio.file_id || null,
-        word_timings: obj.audio.word_timings || null,
-        created_at: obj.audio.created_at || null,
-        updated_at: obj.audio.updated_at || null
-      };
-    }
-    if (obj.audio_id) {
-      return { id: obj.audio_id };
-    }
-    return null;
-  })
-  audio: AudioResponseDto | null;
+  @Type(() => Phrase) // Add Type decorator for nested validation/transformation
+  phrases: Phrase[] | null; // Add phrases property
 
-  @IsString()
-  @Expose()
-  @Transform(({ value }) => {
-    if (!value) return null;
-    return value instanceof Date ? value.toISOString() : value;
-  })
+  @Expose() 
+  @IsDate() // Use IsDate for validation
+  @Transform(({ value }) => value instanceof Date ? value.toISOString() : value) 
   created_at: string;
 
-  @IsString()
-  @Expose()
-  @Transform(({ value }) => {
-    if (!value) return null;
-    return value instanceof Date ? value.toISOString() : value;
-  })
+  @Expose() 
+  @IsDate() // Use IsDate for validation
+  @Transform(({ value }) => value instanceof Date ? value.toISOString() : value) 
   updated_at: string;
 } 

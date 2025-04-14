@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Audio } from '../entities/audio.entity';
 import { AudioGeneratorService } from './audio-generator.service';
 import { AudioStorageService } from './audio-storage.service';
-import { WordTiming } from '../types/analysis-data.types';
+import { WordTiming } from '@usuaya/shared-types';
 
 @Injectable()
 export class AudioService {

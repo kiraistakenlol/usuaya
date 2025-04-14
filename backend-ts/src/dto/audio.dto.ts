@@ -1,5 +1,6 @@
-import { IsString, IsArray, IsOptional, IsUUID, IsDate } from 'class-validator';
-import { Expose, Transform } from 'class-transformer';
+import { IsString, IsArray, IsOptional, IsUUID, ValidateNested, IsDate } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { WordTiming } from '@usuaya/shared-types';
 
 export class AudioResponseDto {
   @IsUUID()
@@ -8,46 +9,22 @@ export class AudioResponseDto {
 
   @IsString()
   @Expose()
-  file_id: string;
+  @IsOptional()
+  file_id?: string | null;
 
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WordTiming)
+  @IsOptional()
+  word_timings?: WordTiming[] | null;
+
+  @IsDate()
   @IsOptional()
   @Expose()
-  word_timings: {
-    word: string;
-    start: number;
-    end: number;
-    confidence: number;
-  }[] | null;
+  created_at?: Date | string | null;
 
-  @IsString()
+  @IsDate()
+  @IsOptional()
   @Expose()
-  @Transform(({ value, obj }) => {
-    // If we have a text_id property, use that
-    if (obj.text_id) {
-      return obj.text_id;
-    }
-    // Otherwise, try to get the ID from the text relationship
-    if (obj.text && obj.text.id) {
-      return obj.text.id;
-    }
-    return null;
-  })
-  text_id: string | null;
-
-  @IsString()
-  @Expose()
-  @Transform(({ value }) => {
-    if (!value) return null;
-    return value instanceof Date ? value.toISOString() : value;
-  })
-  created_at: string;
-
-  @IsString()
-  @Expose()
-  @Transform(({ value }) => {
-    if (!value) return null;
-    return value instanceof Date ? value.toISOString() : value;
-  })
-  updated_at: string;
+  updated_at?: Date | string | null;
 } 

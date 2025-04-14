@@ -30,10 +30,8 @@ import { LlmModule } from './llm/llm.module';
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_DATABASE', 'vibe_dev'),
         entities: [Text, Phrase, Audio],
-        synchronize: true,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        synchronize: false,
+        ssl: false,
       }),
       inject: [ConfigService],
     }),

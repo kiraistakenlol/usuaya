@@ -62,7 +62,7 @@ export default function TextDetailPage() {
 
     // Effect to fetch audio blob when text is loaded
     useEffect(() => {
-        if (text && text.audio && !audioBlobUrl && !isAudioLoading) {
+        if (text && text.audio_id && !audioBlobUrl && !isAudioLoading) {
             let objectUrl: string | null = null;
             const fetchAudio = async () => {
                 setIsAudioLoading(true);
@@ -236,6 +236,16 @@ export default function TextDetailPage() {
             return (
                 <span key={index} style={{ display: 'inline-block' }}>
                     <span
+                        onMouseEnter={() => {
+                            setHoveredSpanishIndex(index);
+                            const alignment = text?.analysis_data?.alignment_spanish_to_english;
+                            const englishIndices = alignment?.[String(index)] ?? [];
+                            setHoveredEnglishIndices(new Set(englishIndices));
+                        }}
+                        onMouseLeave={() => {
+                            setHoveredSpanishIndex(null);
+                            setHoveredEnglishIndices(new Set());
+                        }}
                         onClick={() => handleWordClick(index)}
                         style={{
                             cursor: 'pointer',

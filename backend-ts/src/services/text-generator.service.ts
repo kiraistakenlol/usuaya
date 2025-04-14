@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LlmProvider } from '../llm/llm-provider.interface';
-import { IndexedWordSegment, TextAnalysisData } from '../types/analysis-data.types';
-import { WordTiming } from '../types/analysis-data.types';
-
+import { IndexedWordSegment, TextAnalysisData } from '@usuaya/shared-types';
 @Injectable()
 export class TextGeneratorService {
   private readonly logger = new Logger(TextGeneratorService.name);

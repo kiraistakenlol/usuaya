@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 import { Text } from './text.entity';
-import { WordTiming } from '../types/analysis-data.types';
+import { WordTiming } from '@usuaya/shared-types';
 
 @Entity('audio')
 export class Audio {

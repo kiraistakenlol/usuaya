@@ -4,10 +4,8 @@ import { Repository } from 'typeorm';
 import { Text } from '../entities/text.entity';
 import { TextGeneratorService } from './text-generator.service';
 import { AudioService } from './audio.service';
-import { CreateTextDto } from '../dto/text.dto';
 import { isUUID } from 'class-validator';
-import { TextAnalysisData } from '../types/analysis-data.types';
-import { IndexedWordSegment } from '../types/analysis-data.types';
+import { TextAnalysisData, IndexedWordSegment, CreateTextDto } from '@usuaya/shared-types';
 
 @Injectable()
 export class TextService {
@@ -65,7 +63,6 @@ export class TextService {
       
       // 5. Combine into final structure
       const analysisDataForDb: TextAnalysisData = {
-        spanish_plain: spanishText,
         word_timings: indexedTimings, 
         indexed_spanish_words: finalSimplifiedAnalysis.indexed_spanish_words,
         indexed_english_translation_words: finalSimplifiedAnalysis.indexed_english_translation_words,
@@ -98,7 +95,6 @@ export class TextService {
   }
 
   async findAll(): Promise<Text[]> {
-    this.logger.log('Finding all texts');
     return await this.textRepository.find({
       select: ['id', 'spanish_text', 'created_at', 'audio_id'],
       order: {
@@ -116,7 +112,7 @@ export class TextService {
       this.logger.log(`Finding text with ID: ${id}`);
       const text = await this.textRepository.findOne({
         where: { id },
-        // No relations needed now if audio_id is stored directly
+        relations: { phrases: true },
         select: {
           id: true,
           spanish_text: true,
@@ -128,9 +124,6 @@ export class TextService {
         }
       });
       
-      // Log Retrieved Entity
-      console.log('Retrieved text entity from DB in findOne:', JSON.stringify(text, null, 2));
-
       if (!text) {
         throw new NotFoundException(`Text with ID ${id} not found`);
       }

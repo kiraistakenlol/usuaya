@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Param, Res, NotFoundException, BadRequestE
 import { Response } from 'express';
 import { TextService } from '../services/text.service';
 import { CreateTextDto, TextResponseDto } from '../dto/text.dto';
-import { TextAnalysisData } from '../types/analysis-data.types';
+import { TextAnalysisData } from '@usuaya/shared-types';
 import { isUUID } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 
@@ -37,7 +37,7 @@ export class TextController {
   async findAll(): Promise<TextResponseDto[]> {
     this.logger.log('Finding all texts');
     const texts = await this.textService.findAll();
-    
+    this.logger.log('Original vocabulary:', texts.map(text => text.original_vocabulary));
     // Transform the results to TextResponseDto
     return texts.map(text => {
       const dto = plainToClass(TextResponseDto, text, { 
@@ -64,29 +64,16 @@ export class TextController {
     this.logger.log(`Controller: Finding text with ID: ${id}`);
     const text = await this.textService.findOne(id);
     
-    // --- Log Raw Entity in Controller --- START
-    console.log('Controller received entity from service:', JSON.stringify(text, null, 2));
-    // --- Log Raw Entity in Controller --- END
-    
     // Transform the result to TextResponseDto
     const dto = plainToClass(TextResponseDto, text, { 
       excludeExtraneousValues: true,
       enableImplicitConversion: true
     });
 
-    // --- Manually Re-assign analysis_data --- START
-    // plainToClass strips nested objects typed as 'any' when excludeExtraneousValues is true.
-    // We assign it manually from the original entity after transformation.
-    // Cast entity field to the correct type for safety
     if (text.analysis_data) { 
       dto.analysis_data = text.analysis_data as TextAnalysisData;
     }
-    // --- Manually Re-assign analysis_data --- END
-
-    // --- Log Transformed DTO in Controller --- START
-    console.log('Controller transformed DTO before sending:', JSON.stringify(dto, null, 2));
-    // --- Log Transformed DTO in Controller --- END
-
+  
     return dto;
   }
 

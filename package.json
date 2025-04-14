@@ -1,0 +1,17 @@
+{
+  "name": "usuaya-monorepo",
+  "version": "1.0.0",
+  "private": true, 
+  "workspaces": [
+    "frontend",
+    "backend-ts",
+    "packages/shared-types"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @usuaya/shared-types",
+    "dev:backend": "npm run start:dev -w backend-ts",
+    "dev:frontend": "npm run dev -w frontend",
+    "build:backend": "npm run build -w backend-ts",
+    "build:frontend": "npm run build -w frontend"
+  }
+} 

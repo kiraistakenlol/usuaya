@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne, JoinColumn } from 'typeorm';
 import { Phrase } from './phrase.entity';
 import { Audio } from './audio.entity';
-import { TextAnalysisData } from '../types/analysis-data.types';
+import { TextAnalysisData } from '@usuaya/shared-types';
 
 @Entity('text')
 export class Text {
