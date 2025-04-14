@@ -5,32 +5,8 @@ import {useParams} from 'next/navigation';
 import Link from 'next/link';
 import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
 import { TextAnalysisData, WordTiming } from '@/types/analysis';
+import { Text, VocabularyItem, AudioData } from '@/types/entities';
 import { API_URL, fetchWithErrorHandling } from '../../../utils/api';
-
-// Define VocabularyItem type based on backend DTO
-interface VocabularyItem {
-  id: string;
-  word: string;
-}
-
-// Define Audio type based on backend DTO and expected usage
-interface AudioData {
-  id: string;
-  file_id: string;
-  word_timings: WordTiming[];
-  // created_at and updated_at might exist but are likely unused here
-}
-
-// Update Text interface to match backend DTO
-interface Text {
-  id: string;
-  spanish_text: string;
-  analysis_data: TextAnalysisData | null;
-  original_vocabulary: VocabularyItem[] | null;
-  audio: AudioData | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export default function TextDetailPage() {
   const params = useParams();
@@ -211,7 +187,7 @@ export default function TextDetailPage() {
         const wordTimings = text?.analysis_data?.word_timings;
         if (!wordTimings || !isPlaying) return -1;
         // Find the first word whose end time is after the current time
-        const currentWordIndex = wordTimings.findIndex(timing => timing.end > currentTime);
+        const currentWordIndex = wordTimings.findIndex((timing: WordTiming) => timing.end > currentTime);
         // If not found (-1), or if the first word starts after current time, highlight nothing (-1)
         // Otherwise, highlight the previous word (or index 0 if currentWordIndex is 0)
         if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length -1].start) {
@@ -241,7 +217,7 @@ export default function TextDetailPage() {
           console.warn('Mismatch between word timings and spanish word map lengths');
         }
 
-        return wordTimings.map((timing, index) => {
+        return wordTimings.map((timing: WordTiming, index: number) => {
             const spanishWordDetail = spanishWordMap[String(index)];
             if (!spanishWordDetail) {
                console.warn(`Missing Spanish word detail for index ${index}`);
@@ -441,7 +417,7 @@ export default function TextDetailPage() {
                             >
                                 <h3 className="text-base font-semibold text-gray-700 mb-3">Vocabulary Used:</h3>
                                 <ul className="list-disc list-inside text-sm text-gray-600">
-                                    {text.original_vocabulary.map(item => (
+                                    {text.original_vocabulary.map((item: VocabularyItem) => (
                                         <li key={item.id} className="mb-1">
                                             {item.word}
                                         </li>

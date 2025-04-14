@@ -5,28 +5,9 @@ import Link from 'next/link';
 // import CreateTextForm from '@/components/CreateTextForm'; // Removed unused import
 import RelativeTimeDisplay from '@/components/RelativeTimeDisplay';
 import { API_URL, fetchWithErrorHandling } from '../../utils/api';
+import { Phrase, Text } from '@/types/entities'; // Import shared types
 
 // Interfaces (can be moved to a types file later)
-interface Phrase {
-  id: number;
-  text: string;
-}
-
-interface Text {
-  id: string;
-  spanish_text: string;
-  audio: {
-    id: string;
-    file_id: string;
-    word_timings: {
-      word: string;
-      start: number;
-      end: number;
-      confidence: number;
-    }[];
-  } | null;
-  created_at: string;
-}
 
 export default function TextsPage() {
   const [texts, setTexts] = useState<Text[]>([]);
