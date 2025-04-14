@@ -23,7 +23,6 @@ interface Text {
     file_id: string;
     word_timings: WordTiming[];
   } | null;
-  analysis_data: any;
   created_at: string;
 }
 
@@ -42,13 +41,9 @@ export default function TextDetailPage() {
     const [duration, setDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
-    const [targetSeekTime, setTargetSeekTime] = useState<number | null>(null); // State to trigger seek
+    const [targetSeekTime, setTargetSeekTime] = useState<number | null>(null);
     const [hoveredSpanishIndex, setHoveredSpanishIndex] = useState<number | null>(null);
     const [hoveredEnglishIndices, setHoveredEnglishIndices] = useState<Set<number>>(new Set());
-    const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
-    const [popupData, setPopupData] = useState<any | null>(null);
-    const [isPopupVisible, setIsPopupVisible] = useState(false);
-    const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
     // Ref for Audio Player control
     const audioPlayerRef = useRef<AudioPlayerActions>(null);
     // --- State moved from old AudioPlayer --- END ---
@@ -65,7 +60,6 @@ export default function TextDetailPage() {
         setTargetSeekTime(null);
         setHoveredSpanishIndex(null);
         setHoveredEnglishIndices(new Set());
-        setIsPopupVisible(false);
 
     const fetchText = async () => {
       setLoading(true);
@@ -211,7 +205,7 @@ export default function TextDetailPage() {
         const wordTimings = text?.analysis_data?.word_timings;
         if (!wordTimings || !isPlaying) return -1;
         // Find the first word whose end time is after the current time
-        const currentWordIndex = wordTimings.findIndex((timing: WordTiming) => timing.end > currentTime);
+        const currentWordIndex = wordTimings.findIndex(timing => timing.end > currentTime);
         // If not found (-1), or if the first word starts after current time, highlight nothing (-1)
         // Otherwise, highlight the previous word (or index 0 if currentWordIndex is 0)
         if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length -1].start) {
