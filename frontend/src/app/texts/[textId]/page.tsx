@@ -4,26 +4,32 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
 import Link from 'next/link';
 import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
-import { TextAnalysisData, IndexedSpanishWordDetail } from '@/types/analysis';
+import { TextAnalysisData, WordTiming } from '@/types/analysis';
 import { API_URL, fetchWithErrorHandling } from '../../../utils/api';
 
-interface WordTiming {
+// Define VocabularyItem type based on backend DTO
+interface VocabularyItem {
+  id: string;
   word: string;
-  start: number;
-  end: number;
-  confidence: number;
 }
 
+// Define Audio type based on backend DTO and expected usage
+interface AudioData {
+  id: string;
+  file_id: string;
+  word_timings: WordTiming[];
+  // created_at and updated_at might exist but are likely unused here
+}
+
+// Update Text interface to match backend DTO
 interface Text {
   id: string;
   spanish_text: string;
-  english_translation: string;
-  audio: {
-    id: string;
-    file_id: string;
-    word_timings: WordTiming[];
-  } | null;
+  analysis_data: TextAnalysisData | null;
+  original_vocabulary: VocabularyItem[] | null;
+  audio: AudioData | null;
   created_at: string;
+  updated_at: string;
 }
 
 export default function TextDetailPage() {
