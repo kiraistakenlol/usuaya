@@ -15,17 +15,26 @@ frontend:
 applications:
   - # Configuration for the frontend application
     appRoot: frontend # The directory for this app
-    phases:
-      # preBuild is now handled globally above
-      build:
-        commands:
-          - echo "Building shared-types workspace..."
-          - npm run build -w @usuaya/shared-types # Build shared types first
-          - echo "Building frontend workspace..."
-          - npm run build -w frontend
-    artifacts:
-      # IMPORTANT: Assumes standard Next.js output relative to appRoot.
-      baseDirectory: .next 
-      files:
-        - '**/*'
-    # Cache defined globally above 
+    frontend:
+      buildPath: '/' # Run install and build from the monorepo project root
+      phases:
+        preBuild:
+          commands:
+            - echo "Installing root dependencies..."
+            - npm ci # Install root dependencies based on lock file
+        build:
+          commands:
+            - echo "Building shared-types workspace..."
+            - npm run build -w @usuaya/shared-types # Build shared types first
+            - echo "Building frontend workspace..."
+            - npm run build -w frontend
+      artifacts:
+        # IMPORTANT: Path relative to the project root (because of buildPath: '/')
+        baseDirectory: frontend/.next 
+        files:
+          - '**/*'
+      cache:
+        paths:
+          # Paths relative to the project root
+          - node_modules/**/* 
+          - packages/shared-types/dist/**/* 
