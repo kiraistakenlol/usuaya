@@ -1,7 +1,7 @@
 version: 1
 applications:
   - # Configuration for the main frontend application
-    appRoot: frontend # The directory for this app relative to the repo root
+    appRoot: frontend-v2 # Updated from frontend
     frontend:
       buildPath: '/' # Run install and build commands from the monorepo root
       phases:
@@ -15,11 +15,11 @@ applications:
           commands:
             - echo "Building shared-types workspace..."
             - npm run build -w @usuaya/shared-types # Build shared types first
-            - echo "Building frontend workspace..."
-            - npm run build -w frontend # Build the main frontend
+            - echo "Building frontend workspace (v2)..."
+            - npm run build -w frontend-v2 # Updated from frontend
       artifacts:
         # baseDirectory is relative to the buildPath ('/')
-        baseDirectory: frontend/.next
+        baseDirectory: frontend-v2/dist # Updated from frontend/.next
         files:
           - '**/*'
       cache:

@@ -1,9 +1,10 @@
 {
   "name": "usuaya-monorepo",
   "version": "1.0.0",
-  "private": true, 
+  "private": true,
   "workspaces": [
     "frontend",
+    "frontend-v2",
     "backend-ts",
     "packages/shared-types",
     "amplify-test"
@@ -11,8 +12,13 @@
   "scripts": {
     "build:shared": "npm run build -w @usuaya/shared-types",
     "dev:backend": "npm run start:dev -w backend-ts",
-    "dev:frontend": "npm run dev -w frontend",
+    "dev:frontend": "npm run dev -w frontend-v2",
     "build:backend": "npm run build -w backend-ts",
-    "build:frontend": "npm run build -w frontend"
+    "build:frontend": "npm run build -w frontend-v2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.4",
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^4.1.4"
   }
-} 
+}
