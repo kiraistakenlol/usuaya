@@ -1,21 +1,13 @@
 version: 1
-# Global settings (optional, but useful for root install/cache)
-frontend: 
-  phases:
-    preBuild:
-      commands:
-        - echo "Installing root dependencies..."
-        - npm ci # Use ci for clean installs based on lock file
-  cache:
-    paths:
-      - node_modules/**/* # Cache root node_modules
-      - packages/shared-types/dist/**/* # Cache shared-types build output
-
 # Define the applications within the monorepo
 applications:
   - # Configuration for the frontend application
     appRoot: frontend # The directory for this app
     phases:
+      preBuild:
+        commands:
+          - echo "Installing root dependencies..."
+          - npm ci # Install root dependencies based on lock file
       build:
         commands:
           - echo "Building shared-types workspace..."
@@ -24,11 +16,11 @@ applications:
           - npm run build -w frontend
     artifacts:
       # IMPORTANT: Assumes standard Next.js output relative to appRoot.
-      # Adjust if using `output: standalone` (might be ../.next/standalone from appRoot)
       baseDirectory: .next 
       files:
         - '**/*'
-    # Optional: App-specific cache (if needed)
-    # cache:
-    #   paths:
-    #     - .next/**/* 
+    cache:
+      paths:
+        - ../node_modules/**/* # Cache root node_modules (relative to appRoot)
+        - ../packages/shared-types/dist/**/* # Cache shared-types build output (relative to appRoot)
+        # - .next/**/* # Optional: Cache app-specific build output 
