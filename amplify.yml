@@ -1,13 +1,22 @@
 version: 1
+# Top-level frontend section for global setup and cache
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing root dependencies..."
+        - npm ci # Install root dependencies based on lock file
+  cache:
+    paths:
+      - node_modules/**/* # Cache root node_modules (relative to root)
+      - packages/shared-types/dist/**/* # Cache shared-types build output (relative to root)
+
 # Define the applications within the monorepo
 applications:
   - # Configuration for the frontend application
     appRoot: frontend # The directory for this app
     phases:
-      preBuild:
-        commands:
-          - echo "Installing root dependencies..."
-          - npm ci # Install root dependencies based on lock file
+      # preBuild is now handled globally above
       build:
         commands:
           - echo "Building shared-types workspace..."
@@ -19,8 +28,4 @@ applications:
       baseDirectory: .next 
       files:
         - '**/*'
-    cache:
-      paths:
-        - ../node_modules/**/* # Cache root node_modules (relative to appRoot)
-        - ../packages/shared-types/dist/**/* # Cache shared-types build output (relative to appRoot)
-        # - .next/**/* # Optional: Cache app-specific build output 
+    # Cache defined globally above 
