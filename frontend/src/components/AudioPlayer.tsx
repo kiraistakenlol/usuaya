@@ -1,5 +1,7 @@
 import React, {useEffect, useRef, useState, forwardRef, useImperativeHandle} from 'react';
 import ReactPlayer from 'react-player';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 // Props required by the player itself
 interface AudioPlayerProps {
@@ -74,12 +76,17 @@ const AudioPlayer = forwardRef<AudioPlayerActions, AudioPlayerProps>((
 
     // We only render the player if we have a valid URL
     if (!audioUrl) {
-        return <div className="player-controls"><p className="text-gray-500 text-sm">Waiting for audio data...</p>
-        </div>;
+        return (
+            <Box sx={{ mb: 2 }}>
+                <Typography color="text.secondary" variant="body2">
+                    Waiting for audio data...
+                </Typography>
+            </Box>
+        );
     }
 
     return (
-        <div className="player-controls">
+        <Box sx={{ mb: 2 }}>
             <ReactPlayer
                 ref={playerRef}
                 url={audioUrl} // Use blob URL from props
@@ -94,7 +101,7 @@ const AudioPlayer = forwardRef<AudioPlayerActions, AudioPlayerProps>((
                 controls={true} // Use native controls
                 progressInterval={100}
             />
-        </div>
+        </Box>
     );
 });
 

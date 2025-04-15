@@ -1,154 +1,152 @@
 'use client';
 
-import { Fragment, useState } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon, BookOpenIcon, DocumentTextIcon } from '@heroicons/react/24/outline'; // Using Heroicons for icons
+import { useState } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import MenuIcon from '@mui/icons-material/Menu'; // MUI icon
+import BookOpenIcon from '@mui/icons-material/Book'; // Replace Heroicon
+import DocumentTextIcon from '@mui/icons-material/Article'; // Replace Heroicon
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+const drawerWidth = 288; // lg:w-72 equivalent
+
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const navigation = [
-    { name: 'My Vocabulary', href: '/', icon: BookOpenIcon }, // Point to root (phrases page)
-    { name: 'My Texts', href: '/texts', icon: DocumentTextIcon }, // Point to the new page
+    { name: 'My Vocabulary', href: '/', icon: BookOpenIcon },
+    { name: 'My Texts', href: '/texts', icon: DocumentTextIcon },
   ];
 
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Toolbar>
+        {/* Adjusted title style slightly */}
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
+          Vibe Spanish Helper
+        </Typography>
+      </Toolbar>
+      <Box sx={{ overflowY: 'auto', flexGrow: 1 }}>
+        <List>
+          {navigation.map((item) => (
+            <ListItem key={item.name} disablePadding>
+              {/* Wrap ListItemButton in Link for Next.js routing with MUI */}
+              <Link href={item.href} passHref legacyBehavior>
+                <ListItemButton onClick={() => mobileOpen && setMobileOpen(false)}>
+                  <ListItemIcon>
+                    {/* Use sx prop for icon styling */}
+                    <item.icon sx={{ color: 'grey.600' }} />
+                  </ListItemIcon>
+                  {/* Use sx prop for text styling */}
+                  <ListItemText primary={item.name} sx={{ '& .MuiTypography-root': { fontWeight: 600, fontSize: '0.875rem' } }} />
+                </ListItemButton>
+              </Link>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Box>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Mobile Drawer */}
-      <Transition show={sidebarOpen} as={Fragment}>
-        <Dialog className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
-           <Transition.Child
-             as={Fragment}
-             enter="transition-opacity ease-linear duration-300"
-             enterFrom="opacity-0"
-             enterTo="opacity-100"
-             leave="transition-opacity ease-linear duration-300"
-             leaveFrom="opacity-100"
-             leaveTo="opacity-0"
-           >
-              <div className="fixed inset-0 bg-gray-900/80" />
-           </Transition.Child>
-           
-           <div className="fixed inset-0 flex">
-              <Transition.Child
-                  as={Fragment}
-                  enter="transition ease-in-out duration-300 transform"
-                  enterFrom="-translate-x-full"
-                  enterTo="translate-x-0"
-                  leave="transition ease-in-out duration-300 transform"
-                  leaveFrom="translate-x-0"
-                  leaveTo="-translate-x-full"
-              >
-                  <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                     <Transition.Child
-                        as={Fragment}
-                        enter="ease-in-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in-out duration-300"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                     >
-                        <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                           <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
-                              <span className="sr-only">Close sidebar</span>
-                              <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
-                           </button>
-                        </div>
-                     </Transition.Child>
-                     
-                     {/* Drawer Sidebar content */}
-                     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
-                        <div className="flex h-16 shrink-0 items-center">
-                            <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
-                        </div>
-                        <nav className="flex flex-1 flex-col">
-                           <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                              <li>
-                                 <ul role="list" className="-mx-2 space-y-1">
-                                    {navigation.map((item) => (
-                                    <li key={item.name}>
-                                       <Link
-                                          href={item.href}
-                                          onClick={() => setSidebarOpen(false)} // Close drawer on link click
-                                          className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600"
-                                       >
-                                          <item.icon
-                                          className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-indigo-600"
-                                          aria-hidden="true"
-                                          />
-                                          {item.name}
-                                       </Link>
-                                    </li>
-                                    ))}
-                                 </ul>
-                              </li>
-                           </ul>
-                        </nav>
-                     </div>
-                  </Dialog.Panel>
-               </Transition.Child>
-           </div>
-        </Dialog>
-      </Transition>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.100' }}>
+      {/* AppBar (Top Header) */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { lg: `calc(100% - ${drawerWidth}px)` }, // Adjust width on large screens
+          ml: { lg: `${drawerWidth}px` }, // Margin left on large screens
+          bgcolor: 'white',
+          color: 'text.primary', // Ensure text color contrasts with white bg
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)', // Tailwind shadow-sm
+          borderBottom: '1px solid', 
+          borderColor: 'divider'
+        }}
+      >
+        <Toolbar sx={{ height: '4rem' }}> {/* h-16 equivalent */}
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { lg: 'none' } }} // Only show on mobile
+          >
+            <MenuIcon />
+          </IconButton>
+          {/* Can add Title or other elements here if needed */}
+          <Box sx={{ flexGrow: 1 }} /> {/* Spacer */}
+        </Toolbar>
+      </AppBar>
 
-      {/* Static sidebar for desktop */}
-       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
-             <div className="flex h-16 shrink-0 items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Vibe Spanish Helper</h2>
-             </div>
-             <nav className="flex flex-1 flex-col">
-                <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                   <li>
-                      <ul role="list" className="-mx-2 space-y-1">
-                         {navigation.map((item) => (
-                         <li key={item.name}>
-                            <Link
-                               href={item.href}
-                               className="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600"
-                            >
-                               <item.icon
-                               className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-indigo-600"
-                               aria-hidden="true"
-                               />
-                               {item.name}
-                            </Link>
-                         </li>
-                         ))}
-                      </ul>
-                   </li>
-                </ul>
-             </nav>
-          </div>
-       </div>
+      {/* Drawer (Sidebar) */}
+      <Box
+        component="nav"
+        sx={{ width: { lg: drawerWidth }, flexShrink: { lg: 0 } }}
+        aria-label="mailbox folders"
+      >
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: 'block', lg: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+        {/* Desktop Drawer */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', lg: 'block' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, borderRight: '1px solid', borderColor: 'divider' },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
 
-      {/* Header for mobile and content alignment */}
-      <div className="lg:pl-72">
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <button type="button" className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => setSidebarOpen(true)}>
-            <span className="sr-only">Open sidebar</span>
-            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-          </button>
-
-          <div className="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
-
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-             <div className="flex-1"></div>
-          </div>
-        </div>
-
-        <main className="py-10">
-          <div className="px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
+      {/* Main Content Area */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3, // Default padding
+          width: { lg: `calc(100% - ${drawerWidth}px)` },
+          mt: '4rem', // Offset for AppBar height
+        }}
+      >
+        {/* Add Toolbar spacer to prevent content from going under AppBar */}
+        {/* <Toolbar /> // Toolbar spacer might not be needed if mt is used on main Box */}
+        {children}
+      </Box>
+    </Box>
   );
 } 

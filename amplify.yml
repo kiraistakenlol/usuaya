@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing root dependencies..."
+        - npm ci # Use ci for clean installs based on lock file
+    build:
+      commands:
+        - echo "Building frontend workspace..."
+        - npm run build -w frontend
+  artifacts:
+    # IMPORTANT: Assumes standard Next.js output. Adjust if using `output: standalone`
+    baseDirectory: frontend/.next 
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/* 

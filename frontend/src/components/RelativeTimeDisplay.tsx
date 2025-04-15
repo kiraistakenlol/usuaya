@@ -1,4 +1,5 @@
 import React from 'react';
+import Typography from '@mui/material/Typography';
 
 interface RelativeTimeDisplayProps {
   dateString: string | Date | null | undefined;
@@ -52,7 +53,7 @@ const RelativeTimeDisplay: React.FC<RelativeTimeDisplayProps> = ({ dateString })
   };
 
   if (!dateString) {
-    return <span className="text-gray-400 text-xs">Date unavailable</span>;
+    return <Typography variant="caption" sx={{ color: 'grey.500' }}>Date unavailable</Typography>;
   }
 
   try {
@@ -60,13 +61,13 @@ const RelativeTimeDisplay: React.FC<RelativeTimeDisplayProps> = ({ dateString })
     // Check if date is valid
     if (isNaN(date.getTime())) {
        console.error("Invalid date string received:", dateString);
-       return <span className="text-gray-400 text-xs">Invalid date</span>;
+       return <Typography variant="caption" sx={{ color: 'grey.500' }}>Invalid date</Typography>;
     }
     const formattedDisplay = formatRelativeTime(date);
-    return <span title={date.toLocaleString()} className="text-gray-500 text-xs">{formattedDisplay}</span>;
+    return <Typography variant="caption" color="text.secondary" title={date.toLocaleString()}>{formattedDisplay}</Typography>;
   } catch (error) {
      console.error('Error parsing date:', error, "Input:", dateString);
-     return <span className="text-gray-400 text-xs">Date error</span>;
+     return <Typography variant="caption" sx={{ color: 'grey.500' }}>Date error</Typography>;
   }
 };
 

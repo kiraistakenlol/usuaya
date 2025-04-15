@@ -1,15 +1,6 @@
-@import "tailwindcss";
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -25,67 +16,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.audio-player {
-  @apply bg-white rounded-lg shadow-md p-4;
-}
+/* Keep non-Tailwind dependent styles below */
 
-.audio-player .player-controls {
-  @apply mb-4;
-}
-
-.audio-player .time-display {
-  @apply text-sm text-gray-600 mt-2 text-center;
-}
-
-.audio-player .text-content {
-  @apply text-gray-800 leading-relaxed;
-}
-
-.audio-player .text-content span {
-  @apply inline-block;
-}
-
-.audio-player .text-content span:hover {
-  @apply bg-gray-100;
-}
-
-/* Custom styles for react-player */
-.react-player {
-  @apply rounded-lg overflow-hidden;
-}
-
-.react-player video {
-  @apply rounded-lg;
-}
-
-/* Progress bar styles */
-.react-player .progress-bar {
-  @apply h-1 bg-gray-200 rounded-full;
-}
-
-.react-player .progress-bar .progress {
-  @apply h-full bg-blue-500 rounded-full;
-}
-
-.highlighted-word {
-  position: relative;
-  z-index: 1;
-}
-
-.highlighted-word::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #3b82f6;
-  z-index: -1;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-/* Word Popup Styles */
+/* Word Popup Styles (Keep for now, assuming MUI won't replace popup logic immediately) */
 .word-popup {
   background-color: #ffffff;
   border: 1px solid #adb5bd;
@@ -163,9 +96,8 @@ body {
    font-weight: normal;
 }
 
-/* REMOVE CONFLICTING OLD STYLES END */
 
-/* RESTORE Annotation Underline Styles START */
+/* Annotation Underline Styles */
 
 .annotation-grammar {
   /* Example: Wavy blue underline for grammar points */
@@ -190,24 +122,7 @@ body {
    padding-bottom: 1px;
 }
 
-/* RESTORE Annotation Underline Styles END */
-
-/* Add more styles for other annotation types as needed */
-/*
-.annotation-cultural {
-   border-bottom: 2px solid orange;
-   padding-bottom: 1px;
-}
-*/
-
-/* Add a default style for any other annotation type if desired */
-/*
-.annotation-default {
-  font-style: italic;
-}
-*/
-
-/* RESTORE Styles trying to preserve underlines on highlight START */
+/* Styles trying to preserve underlines on highlight */
 
 span[style*="background-color: #3b82f6"].annotation-grammar,
 span[style*="background-color: #3b82f6"].annotation-slang,
@@ -216,5 +131,3 @@ span[style*="background-color: #3b82f6"].annotation-cultural {
    /* Ensure text-decoration persists, color might need adjustment if needed */
    /* Color is inherited or set on the parent span */
 }
-
-/* RESTORE Styles trying to preserve underlines on highlight END */
