@@ -44,18 +44,16 @@ export class AudioData {
   updated_at!: string;
 }
 
-// Matches backend TextResponseDto
 export interface TextData {
   id: string;
   spanish_text: string;
   analysis_data: TextAnalysisData | null;
   original_vocabulary: VocabularyItem[] | null;
-  audio: AudioData | null;
+  audio_id: string;
   created_at: string;
   updated_at: string;
 }
 
-// Backend DTO for creating text
 export interface CreateTextDto {
   vocabulary: string[];
 }

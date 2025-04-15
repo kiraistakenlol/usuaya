@@ -1,0 +1,11 @@
+node_modules
+.next
+.env*
+*.log
+
+# Git files
+.git
+.gitignore
+
+# Mac specific
+.DS_Store 

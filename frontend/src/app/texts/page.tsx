@@ -2,15 +2,12 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
-// import CreateTextForm from '@/components/CreateTextForm'; // Removed unused import
 import RelativeTimeDisplay from '@/components/RelativeTimeDisplay';
 import { API_URL, fetchWithErrorHandling } from '../../utils/api';
-import { Phrase, Text } from '@/types/entities'; // Import shared types
-
-// Interfaces (can be moved to a types file later)
+import {Phrase, TextData} from "@usuaya/shared-types";
 
 export default function TextsPage() {
-  const [texts, setTexts] = useState<Text[]>([]);
+  const [texts, setTexts] = useState<TextData[]>([]);
   const [vocabulary, setVocabulary] = useState<Phrase[]>([]); // Existing phrases
   const [manualInput, setManualInput] = useState('');
 

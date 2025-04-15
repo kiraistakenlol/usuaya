@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { API_URL, fetchWithErrorHandling } from '../utils/api';
-import { Phrase } from '@/types/entities';
+import {Phrase} from "@usuaya/shared-types";
 
 export default function PhrasesPage() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);

@@ -3,18 +3,17 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
 import Link from 'next/link';
-import AudioPlayer, { AudioPlayerActions } from '@/components/AudioPlayer';
-import { TextAnalysisData, WordTiming } from '@/types/analysis';
-import { Text, VocabularyItem, AudioData } from '@/types/entities';
-import { API_URL, fetchWithErrorHandling } from '../../../utils/api';
+import AudioPlayer, {AudioPlayerActions} from '@/components/AudioPlayer';
+import {API_URL, fetchWithErrorHandling} from '../../../utils/api';
+import {TextData, VocabularyItem, WordTiming} from "@usuaya/shared-types";
 
 export default function TextDetailPage() {
-  const params = useParams();
+    const params = useParams();
     const textId = params.textId as string;
 
-  const [text, setText] = useState<Text | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    const [text, setText] = useState<TextData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [audioError, setAudioError] = useState<string | null>(null);
     const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null);
     const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
@@ -27,11 +26,11 @@ export default function TextDetailPage() {
     const [hoveredSpanishIndex, setHoveredSpanishIndex] = useState<number | null>(null);
     const [hoveredEnglishIndices, setHoveredEnglishIndices] = useState<Set<number>>(new Set());
     // Ref for Audio Player control
-    const audioPlayerRef = useRef<AudioPlayerActions>(null);
+    const audioPlayerRef = useRef<AudioPlayerActions | null>(null);
     // --- State moved from old AudioPlayer --- END ---
 
     // Effect to fetch text details
-  useEffect(() => {
+    useEffect(() => {
         if (!textId) return;
         setAudioBlobUrl(null);
         // Reset other states too
@@ -43,21 +42,21 @@ export default function TextDetailPage() {
         setHoveredSpanishIndex(null);
         setHoveredEnglishIndices(new Set());
 
-    const fetchText = async () => {
-      setLoading(true);
-      setError(null);
+        const fetchText = async () => {
+            setLoading(true);
+            setError(null);
             setAudioError(null);
-      try {
-        const data = await fetchWithErrorHandling(`${API_URL}/texts/${textId}`);
-        setText(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error fetching text');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchText();
+            try {
+                const data = await fetchWithErrorHandling(`${API_URL}/texts/${textId}`);
+                setText(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Error fetching text');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchText();
     }, [textId]);
 
     // Effect to fetch audio blob when text is loaded
@@ -190,7 +189,7 @@ export default function TextDetailPage() {
         const currentWordIndex = wordTimings.findIndex((timing: WordTiming) => timing.end > currentTime);
         // If not found (-1), or if the first word starts after current time, highlight nothing (-1)
         // Otherwise, highlight the previous word (or index 0 if currentWordIndex is 0)
-        if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length -1].start) {
+        if (currentWordIndex === -1 && wordTimings.length > 0 && currentTime >= wordTimings[wordTimings.length - 1].start) {
             return wordTimings.length - 1; // Highlight last word if past its start
         }
         if (currentWordIndex === -1 || (currentWordIndex === 0 && currentTime < wordTimings[0].start)) {
@@ -214,14 +213,14 @@ export default function TextDetailPage() {
         if (!wordTimings || !spanishWordMap) return <p>Analysis data missing.</p>;
 
         if (wordTimings.length !== Object.keys(spanishWordMap).length) {
-          console.warn('Mismatch between word timings and spanish word map lengths');
+            console.warn('Mismatch between word timings and spanish word map lengths');
         }
 
         return wordTimings.map((timing: WordTiming, index: number) => {
             const spanishWordDetail = spanishWordMap[String(index)];
             if (!spanishWordDetail) {
-               console.warn(`Missing Spanish word detail for index ${index}`);
-               return <span key={index}> ERROR </span>;
+                console.warn(`Missing Spanish word detail for index ${index}`);
+                return <span key={index}> ERROR </span>;
             }
 
             const isCurrentWord = index === highlightSpanishIndex;
@@ -234,7 +233,7 @@ export default function TextDetailPage() {
             else if (isHoverWord) backgroundColor = '#e0e0e0';
 
             return (
-                <span key={index} style={{ display: 'inline-block' }}>
+                <span key={index} style={{display: 'inline-block'}}>
                     <span
                         onMouseEnter={() => {
                             setHoveredSpanishIndex(index);
@@ -281,7 +280,7 @@ export default function TextDetailPage() {
             else if (isHoverHighlighted) backgroundColor = '#e0e0e0';
 
             return (
-                <span key={index} style={{ display: 'inline-block' }}>
+                <span key={index} style={{display: 'inline-block'}}>
                     <span
                         style={{
                             padding: '1px 2px',
@@ -302,31 +301,31 @@ export default function TextDetailPage() {
 
     // --- Render Functions --- END ---
 
-  return (
-    <>
-      <div className="mb-6">
-         <Link href="/texts" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-           &larr; Back to All Texts
-         </Link>
-      </div>
+    return (
+        <>
+            <div className="mb-6">
+                <Link href="/texts" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                    &larr; Back to All Texts
+                </Link>
+            </div>
 
-      {loading && <p className="text-gray-500">Loading text...</p>}
-      
-      {error && (
+            {loading && <p className="text-gray-500">Loading text...</p>}
+
+            {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
                      role="alert">
-            <strong className="font-bold">Error:</strong>
-            <span className="block sm:inline"> {error}</span>
-        </div>
-      )}
+                    <strong className="font-bold">Error:</strong>
+                    <span className="block sm:inline"> {error}</span>
+                </div>
+            )}
 
-      {text && !loading && !error && (
-        <div className="bg-white shadow rounded-md overflow-hidden">
-          <div className="px-4 py-5 sm:p-6">
+            {text && !loading && !error && (
+                <div className="bg-white shadow rounded-md overflow-hidden">
+                    <div className="px-4 py-5 sm:p-6">
                         <div className="flex justify-between items-start mb-4">
                             <h2 className="text-lg font-medium text-gray-900">
                                 Text Details
-             </h2>
+                            </h2>
                             <p className="text-sm text-gray-500">
                                 Created: {(() => {
                                 try {
@@ -379,8 +378,8 @@ export default function TextDetailPage() {
                                     onPause={handlePause}
                                     onEnded={handleEnded}
                                 />
-                </div>
-             )}
+                            </div>
+                        )}
 
                         {/* Spanish Text Block */}
                         {text.analysis_data?.word_timings && (
@@ -393,7 +392,7 @@ export default function TextDetailPage() {
                             }}>
                                 <h3 className="text-base font-semibold text-gray-700 mb-2">Spanish Text:</h3>
                                 <p style={{lineHeight: '1.6'}}>{renderSpanishText()}</p>
-             </div>
+                            </div>
                         )}
 
                         {/* English Translation Block */}
@@ -407,16 +406,16 @@ export default function TextDetailPage() {
                                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
                                 }}
                             >
-                <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
+                                <h3 className="text-base font-semibold text-gray-700 mb-2">English Translation:</h3>
                                 <p className="text-gray-600" style={{lineHeight: '1.6'}}>
                                     {renderEnglishText()}
-                </p>
-             </div>
+                                </p>
+                            </div>
                         )}
 
-                        {/* Display Original Vocabulary */} 
+                        {/* Display Original Vocabulary */}
                         {text.original_vocabulary && text.original_vocabulary.length > 0 && (
-                            <div 
+                            <div
                                 style={{
                                     marginTop: '20px',
                                     padding: '15px 20px',
@@ -433,11 +432,11 @@ export default function TextDetailPage() {
                                         </li>
                                     ))}
                                 </ul>
-                           </div>
+                            </div>
                         )}
-          </div>
-        </div>
-      )}
-    </>
-  );
+                    </div>
+                </div>
+            )}
+        </>
+    );
 } 
