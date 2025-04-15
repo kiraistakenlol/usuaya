@@ -13,28 +13,53 @@ frontend:
 
 # Define the applications within the monorepo
 applications:
-  - # Configuration for the frontend application
-    appRoot: frontend # The directory for this app
+  - # Configuration for the main frontend application
+    appRoot: frontend 
     frontend:
-      buildPath: '/' # Run install and build from the monorepo project root
+      buildPath: '/'
       phases:
         preBuild:
           commands:
-            - echo "Installing root dependencies..."
-            - npm ci # Install root dependencies based on lock file
+            - echo "Installing root dependencies (main app)..."
+            - npm ci
         build:
           commands:
-            - echo "Building shared-types workspace..."
-            - npm run build -w @usuaya/shared-types # Build shared types first
-            - echo "Building frontend workspace..."
+            - echo "Building shared-types workspace (main app)..."
+            - npm run build -w @usuaya/shared-types
+            - echo "Building frontend workspace (main app)..."
             - npm run build -w frontend
       artifacts:
-        # IMPORTANT: Path relative to the project root (because of buildPath: '/')
         baseDirectory: frontend/.next 
         files:
           - '**/*'
       cache:
         paths:
-          # Paths relative to the project root
           - node_modules/**/* 
           - packages/shared-types/dist/**/* 
+
+  - # Configuration for the amplify-test application
+    appRoot: amplify-test # Root directory for this app
+    frontend:
+      buildPath: '/' # Also build from the monorepo root
+      phases:
+        preBuild:
+          commands:
+            # Root npm ci should cover dependencies unless it has unique ones
+            - echo "Root deps already installed, skipping preBuild for test-app"
+            # If amplify-test had unique dependencies *not* in root:
+            # - cd amplify-test && npm install
+            # - cd ..
+        build:
+          commands:
+            - echo "Building amplify-test workspace..."
+            # Use workspace command to build this specific app
+            - npm run build -w amplify-test-app # Use package name from its package.json
+      artifacts:
+        # Path relative to the project root
+        baseDirectory: amplify-test/.next 
+        files:
+          - '**/*'
+      cache:
+        paths:
+          # Cache root node_modules again (might be redundant but safe)
+          - node_modules/**/* 
