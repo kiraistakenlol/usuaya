@@ -1,7 +1,7 @@
 version: 1
 applications:
-  - # Configuration for the amplify-test application
-    appRoot: amplify-test # The directory for this app relative to the repo root
+  - # Configuration for the main frontend application
+    appRoot: frontend # The directory for this app relative to the repo root
     frontend:
       buildPath: '/' # Run install and build commands from the monorepo root
       phases:
@@ -13,15 +13,17 @@ applications:
             - npm ci # Install all monorepo dependencies based on root lock file
         build:
           commands:
-            - echo "Building amplify-test workspace..."
-            # Use workspace command (assumes script in package.json uses npx)
-            - npm run build -w amplify-test-app
+            - echo "Building shared-types workspace..."
+            - npm run build -w @usuaya/shared-types # Build shared types first
+            - echo "Building frontend workspace..."
+            - npm run build -w frontend # Build the main frontend
       artifacts:
         # baseDirectory is relative to the buildPath ('/')
-        baseDirectory: amplify-test/.next
+        baseDirectory: frontend/.next
         files:
           - '**/*'
       cache:
         paths:
           # Paths are relative to the buildPath ('/')
-          - node_modules/**/* # Cache the root node_modules 
+          - node_modules/**/* # Cache the root node_modules
+          - packages/shared-types/dist/**/* # Cache shared-types build output 
