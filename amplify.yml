@@ -4,6 +4,11 @@ frontend:
   phases:
     preBuild:
       commands:
+        # Specify Node version (Amplify uses nvm)
+        - echo "Selecting Node.js 20..."
+        - nvm use 20 
+        - echo "Node version: $(node -v)"
+        - echo "NPM version: $(npm -v)"
         - echo "Installing root dependencies..."
         - npm ci # Install root dependencies based on lock file
   cache:
@@ -18,10 +23,7 @@ applications:
     frontend:
       buildPath: '/'
       phases:
-        preBuild:
-          commands:
-            - echo "Installing root dependencies (main app)..."
-            - npm ci
+        # preBuild is handled globally
         build:
           commands:
             - echo "Building shared-types workspace (main app)..."
@@ -32,33 +34,25 @@ applications:
         baseDirectory: frontend/.next 
         files:
           - '**/*'
-      cache:
-        paths:
-          - node_modules/**/* 
-          - packages/shared-types/dist/**/* 
+      # Cache defined globally
 
   - # Configuration for the amplify-test application
     appRoot: amplify-test # Root directory for this app
     frontend:
       buildPath: '/' # Also build from the monorepo root
       phases:
-        preBuild:
-          commands:
-            # Root npm ci should cover dependencies unless it has unique ones
-            - echo "Root deps already installed, skipping preBuild for test-app"
-            # If amplify-test had unique dependencies *not* in root:
-            # - cd amplify-test && npm install
-            # - cd ..
+        # preBuild is handled globally
         build:
           commands:
             - echo "Building amplify-test workspace..."
-            # Use workspace command to build this specific app
-            - npm run build -w amplify-test-app # Use package name from its package.json
+            # Use workspace command with npx
+            - npm run build -w amplify-test-app # Uses script: "npx next build"
       artifacts:
         # Path relative to the project root
         baseDirectory: amplify-test/.next 
         files:
           - '**/*'
+      # Cache defined globally
       cache:
         paths:
           # Cache root node_modules again (might be redundant but safe)
