@@ -10,7 +10,7 @@ frontend:
         - echo "Building shared-types workspace..."
         - npm run build:shared # Build shared types first
         - echo "Building frontend workspace..."
-        - npm run dev:frontend
+        - npm run build:frontend
   artifacts:
     # IMPORTANT: Assumes standard Next.js output. Adjust if using `output: standalone`
     baseDirectory: frontend/.next 
