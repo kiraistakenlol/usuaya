@@ -53,7 +53,7 @@ applications:
           commands:
             - echo "Building amplify-test workspace..."
             # Use workspace command to build this specific app
-            - npm run build -w amplify-test # Use package name from its package.json
+            - npm run build -w amplify-test-app # Use package name from its package.json
       artifacts:
         # Path relative to the project root
         baseDirectory: amplify-test/.next 
