@@ -1,0 +1,27 @@
+version: 1
+applications:
+  - # Configuration for the amplify-test application
+    appRoot: amplify-test # The directory for this app relative to the repo root
+    frontend:
+      buildPath: '/' # Run install and build commands from the monorepo root
+      phases:
+        preBuild:
+          commands:
+            # Optional: Specify Node version if needed (Amplify defaults usually work)
+            # - nvm use 20
+            - echo "Installing root dependencies..."
+            - npm ci # Install all monorepo dependencies based on root lock file
+        build:
+          commands:
+            - echo "Building amplify-test workspace..."
+            # Use workspace command (assumes script in package.json uses npx)
+            - npm run build -w amplify-test-app
+      artifacts:
+        # baseDirectory is relative to the buildPath ('/')
+        baseDirectory: amplify-test/.next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          # Paths are relative to the buildPath ('/')
+          - node_modules/**/* # Cache the root node_modules 
