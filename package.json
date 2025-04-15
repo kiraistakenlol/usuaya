@@ -5,7 +5,8 @@
   "workspaces": [
     "frontend",
     "backend-ts",
-    "packages/shared-types"
+    "packages/shared-types",
+    "amplify-test"
   ],
   "scripts": {
     "build:shared": "npm run build -w @usuaya/shared-types",
