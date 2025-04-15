@@ -7,8 +7,10 @@ frontend:
         - npm ci # Use ci for clean installs based on lock file
     build:
       commands:
+        - echo "Building shared-types workspace..."
+        - npm build:shared # Build shared types first
         - echo "Building frontend workspace..."
-        - npm run build -w frontend
+        - npm dev:frontend
   artifacts:
     # IMPORTANT: Assumes standard Next.js output. Adjust if using `output: standalone`
     baseDirectory: frontend/.next 
@@ -16,4 +18,5 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/* 
+      - node_modules/**/*
+      - packages/shared-types/dist/**/* # Cache shared-types build output 
