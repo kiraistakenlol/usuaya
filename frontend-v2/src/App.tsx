@@ -1,5 +1,5 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+// import AppLayout from './components/AppLayout'; // Removed unused import
 import './App.css'; // Keep default App styles for now
 
 function HomePlaceholder() {
