@@ -111,3 +111,11 @@ This document outlines the steps to migrate the existing Next.js frontend (`fron
 13. **Update Root Build Scripts:**
     *   [ ] Modify scripts in the root `package.json`:
         *   `
+
+15. **Cleanup (Post-Verification):**
+    *   [x] Once `frontend-v2` is stable and confirmed working, remove the old `frontend` directory.
+    *   [x] Update any documentation (e.g., root `README.md`, Terraform config) to reflect the new frontend setup.
+
+---
+
+*This plan will be iterated upon. Checked items indicate completion.*

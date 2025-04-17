@@ -306,37 +306,21 @@ resource "aws_amplify_app" "frontend_app" {
   repository = var.github_repo_url
   oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
 
-  # Build settings for Next.js
-  build_spec = <<-EOT
-    version: 1
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - cd frontend
-            - npm ci
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        baseDirectory: frontend/.next
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - frontend/node_modules/**/*
-  EOT
+  # Build spec is now defined in amplify.yml in the repo root
+  # build_spec = <<-EOT
+  #   ...
+  # EOT
 
-  # Environment variables for the frontend build/runtime
-  environment_variables = {
-    NEXT_PUBLIC_API_URL = "https://${aws_apprunner_service.backend_service.service_url}"
-  }
+  # Environment variables managed by amplify.yml or local .env if needed
+  # environment_variables = {
+  #   VITE_API_URL = "https://${aws_apprunner_service.backend_service.service_url}" # Example if needed
+  # }
 
-  # Custom rule for Next.js routing
+  # Custom rule for Single Page Application (SPA) routing (Vite)
   custom_rule {
-    source = "</^[^.]+$|\\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json)$)([^.]+$)/>"
+    source = "/<*>"
     target = "/index.html"
-    status = "200"
+    status = "404-200" # Changed from 200 to 404-200 for SPA rewrite
   }
 
   tags = {
@@ -346,12 +330,12 @@ resource "aws_amplify_app" "frontend_app" {
 
 resource "aws_amplify_branch" "frontend_branch" {
   app_id      = aws_amplify_app.frontend_app.id
-  branch_name = "master"
-  stage       = "PRODUCTION"
+  branch_name = var.frontend_branch_name # Use variable
+  stage       = "PRODUCTION" # Or make this configurable
   enable_auto_build = true
 
   tags = {
-    Name = "${var.project_name}-frontend-branch-master"
+    Name = "${var.project_name}-frontend-branch-${var.frontend_branch_name}"
   }
 }
 
