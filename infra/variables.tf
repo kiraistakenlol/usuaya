@@ -54,7 +54,7 @@ variable "github_oauth_token_secret_arn" {
 variable "frontend_branch_name" {
   description = "The Git branch Amplify should deploy"
   type        = string
-  default     = "main"
+  default     = "master"
 }
 
 variable "anthropic_api_key_secret_arn" {
