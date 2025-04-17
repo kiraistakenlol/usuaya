@@ -29,10 +29,10 @@ export interface TextAnalysisData {
 
 // --- Shared Entity/DTO Types ---
 
-// Matches backend VocabularyItemDto
+// Matches backend VocabularyItemDto/Phrase Entity
 export class VocabularyItem {
   @Expose() id!: string; // Assuming UUID string from backend
-  @Expose() word!: string;
+  @Expose() text!: string; // Renamed from word to match API
 }
 
 // Matches backend AudioResponseDto (relevant fields)
