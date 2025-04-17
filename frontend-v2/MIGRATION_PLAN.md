@@ -93,14 +93,14 @@ This document outlines the steps to migrate the existing Next.js frontend (`fron
         *   [ ] Implement logic to display Spanish text, English translation, vocabulary.
         *   [ ] Integrate `AudioPlayer` component if applicable, handling audio fetching and state management within this component.
         *   [ ] Adapt interaction logic (word click, hover).
-    *   [ ] **Main View (`/`):**
+    *   [x] **Main View (`/`):**
         *   [ ] Decide on content (e.g., Vocabulary list, dashboard).
-        *   [ ] Create component (e.g., `src/pages/HomePage.tsx`).
-        *   [ ] Implement necessary fetching and display logic.
+        *   [x] Create component (e.g., `src/pages/HomePage.tsx`).
+        *   [x] Implement necessary fetching and display logic.
 
 11. **API Client & Static Assets:**
     *   [x] Copy `frontend/src/utils/api.ts` to `frontend-v2/src/utils/api.ts`. Verify imports.
-    *   [ ] Copy contents of `frontend/public` to `frontend-v2/public`.
+    *   [x] Copy contents of `frontend/public` to `frontend-v2/public`.
 
 **Phase 4: Refinement & Integration**
 
