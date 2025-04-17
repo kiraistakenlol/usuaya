@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState, forwardRef, useImperativeHandle} from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import ReactPlayer from 'react-player';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';

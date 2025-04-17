@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -6,7 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button'; // For Back button
 import { fetchWithErrorHandling, API_URL } from '../utils/api'; // Assuming api.ts is in utils
-import { TextData, VocabularyItem, WordTiming } from '@usuaya/shared-types'; // Import shared types
+import { TextData, VocabularyItem } from '@usuaya/shared-types'; // Import shared types
 // TODO: Import AudioPlayer and its types
 
 function TextDetailPage() {

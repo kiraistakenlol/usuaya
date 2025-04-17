@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 // import { useTheme } from '@mui/material/styles'; // Removed unused import
 // import useMediaQuery from '@mui/material/useMediaQuery'; // Removed unused import
@@ -20,7 +20,7 @@ import BookOpenIcon from '@mui/icons-material/Book'; // Replace Heroicon
 import DocumentTextIcon from '@mui/icons-material/Article'; // Replace Heroicon
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const drawerWidth = 288; // lg:w-72 equivalent
@@ -143,9 +143,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           mt: '4rem', // Offset for AppBar height
         }}
       >
-        {/* Add Toolbar spacer to prevent content from going under AppBar */}
-        {/* <Toolbar /> // Toolbar spacer might not be needed if mt is used on main Box */}
-        {children}
+        {children as any} { /* Cast children to any as temporary workaround */ }
       </Box>
     </Box>
   );
