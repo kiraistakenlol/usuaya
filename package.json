@@ -3,11 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
     "frontend-v2",
     "backend-ts",
-    "packages/shared-types",
-    "amplify-test"
+    "packages/shared-types"
   ],
   "scripts": {
     "build:shared": "npm run build -w @usuaya/shared-types",
@@ -16,11 +14,5 @@
     "build:backend": "npm run build -w backend-ts",
     "build:frontend": "npm run build -w frontend-v2"
   },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.4",
-    "@types/react": "^18.3.20",
-    "@types/react-dom": "^18.3.6",
-    "autoprefixer": "^10.4.21",
-    "tailwindcss": "^4.1.4"
-  }
+  "devDependencies": {}
 }
