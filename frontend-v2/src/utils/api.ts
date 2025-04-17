@@ -1,7 +1,8 @@
 // API Utilities
 
 // Get the API URL from environment variable or fall back to localhost for development
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Use Vite's import.meta.env for client-side env vars (ensure VITE_API_URL is set in .env)
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Helper function to handle fetch errors
 export async function fetchWithErrorHandling(url: string, options?: RequestInit) {
