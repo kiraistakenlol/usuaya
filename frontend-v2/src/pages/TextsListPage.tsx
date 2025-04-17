@@ -10,7 +10,6 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {API_URL, fetchWithErrorHandling} from '../utils/api';
@@ -124,9 +123,9 @@ function TextsListPage() {
                     Create New Text
                 </Typography>
                 <Box component="form" onSubmit={handleGenerateText}>
-                    <Grid container spacing={3} sx={{mb: 2}}>
-                        {/* Vocabulary Selection Grid item */}
-                        <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 2 }}>
+                        {/* Vocabulary Selection Box item */}
+                        <Box sx={{ flex: '1 1 400px', minWidth: '300px' }}>
                             <Paper variant="outlined" sx={{p: 2, bgcolor: 'grey.50', height: '300px'}}>
                                 <Typography variant="subtitle2" component="label" sx={{mb: 1, display: 'block'}}>
                                     Add Word from Vocabulary (Click to add):
@@ -164,10 +163,10 @@ function TextsListPage() {
                                     </Paper>
                                 )}
                             </Paper>
-                        </Grid>
+                        </Box>
 
-                        {/* Manual Input Area Grid item */}
-                        <Grid item xs={12} md={6}>
+                        {/* Manual Input Area Box item */}
+                        <Box sx={{ flex: '1 1 400px', minWidth: '300px' }}>
                             <Paper variant="outlined" sx={{p: 2, bgcolor: 'grey.50', height: '300px'}}>
                                 <Typography variant="subtitle2" component="label" htmlFor="manual-input"
                                             sx={{mb: 1, display: 'block'}}>
@@ -186,8 +185,8 @@ function TextsListPage() {
                                     sx={{height: 'calc(100% - 30px)'}}
                                 />
                             </Paper>
-                        </Grid>
-                    </Grid>
+                        </Box>
+                    </Box>
 
                     {/* Submit Button */}
                     <Box sx={{display: 'flex', justifyContent: 'flex-end'}}>
@@ -219,7 +218,7 @@ function TextsListPage() {
                                 <ListItemButton component={RouterLink} to={`/texts/${text.id}`}>
                                     <ListItemText
                                         primary={text.spanish_text || `Text ${text.id}`}
-                                        secondary={<RelativeTimeDisplay date={text.created_at}/>}
+                                        secondary={new Date(text.created_at).toLocaleString()}
                                         primaryTypographyProps={{fontWeight: 'medium'}}
                                     />
                                     <ChevronRightIcon color="action"/>

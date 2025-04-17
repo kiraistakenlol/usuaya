@@ -153,7 +153,7 @@ export default function AppLayout({children}: AppLayoutProps) {
                     mt: '4rem', // Offset for AppBar height
                 }}
             >
-                {children as any} { /* Cast children to any as temporary workaround */}
+                <>{children}</>
             </Box>
         </Box>
     );
