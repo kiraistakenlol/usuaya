@@ -74,30 +74,32 @@ This document outlines the steps to migrate the existing Next.js frontend (`fron
 **Phase 3: Component & View Migration**
 
 9.  **Migrate Core Components:**
-    *   [ ] Copy reusable components from `frontend/src/components` (e.g., `AudioPlayer`, `RelativeTimeDisplay` if keeping) to `frontend-v2/src/components`.
+    *   [x] Copy reusable components from `frontend/src/components` (e.g., `AudioPlayer`, `RelativeTimeDisplay` if keeping) to `frontend-v2/src/components`.
+        *   `AudioPlayer.tsx` copied.
     *   [ ] Update imports within these components (e.g., remove Next.js imports, ensure local/MUI imports are correct).
+        *   `AudioPlayer.tsx` checked, no changes needed.
     *   [ ] Test components in isolation if possible (e.g., using Storybook, or simple test pages).
 
 10. **Recreate Views/Pages:**
-    *   [ ] **Texts List View (`/texts`):**
-        *   Create a component (e.g., `src/pages/TextsListPage.tsx`).
-        *   Implement `useEffect` to fetch the list of texts from the backend API (`/api/texts`).
-        *   Display texts, possibly using MUI `List` or `Table`.
-        *   Use `react-router-dom/Link` to link to detail pages.
+    *   [x] **Texts List View (`/texts`):**
+        *   [x] Create a component (e.g., `src/pages/TextsListPage.tsx`).
+        *   [x] Implement `useEffect` to fetch the list of texts from the backend API (`/api/texts`).
+        *   [x] Display texts, possibly using MUI `List` or `Table`.
+        *   [x] Use `react-router-dom/Link` to link to detail pages.
     *   [ ] **Text Detail View (`/texts/:textId`):**
-        *   Create a component (e.g., `src/pages/TextDetailPage.tsx`).
-        *   Use `useParams` from `react-router-dom` to get `textId`.
-        *   Implement `useEffect` to fetch text details from `/api/texts/:textId`.
-        *   Implement logic to display Spanish text, English translation, vocabulary.
-        *   Integrate `AudioPlayer` component if applicable, handling audio fetching and state management within this component.
-        *   Adapt interaction logic (word click, hover).
+        *   [x] Create a component (e.g., `src/pages/TextDetailPage.tsx`).
+        *   [x] Use `useParams` from `react-router-dom` to get `textId`.
+        *   [x] Implement `useEffect` to fetch text details from `/api/texts/:textId`.
+        *   [ ] Implement logic to display Spanish text, English translation, vocabulary.
+        *   [ ] Integrate `AudioPlayer` component if applicable, handling audio fetching and state management within this component.
+        *   [ ] Adapt interaction logic (word click, hover).
     *   [ ] **Main View (`/`):**
-        *   Decide on content (e.g., Vocabulary list, dashboard).
-        *   Create component (e.g., `src/pages/HomePage.tsx`).
-        *   Implement necessary fetching and display logic.
+        *   [ ] Decide on content (e.g., Vocabulary list, dashboard).
+        *   [ ] Create component (e.g., `src/pages/HomePage.tsx`).
+        *   [ ] Implement necessary fetching and display logic.
 
 11. **API Client & Static Assets:**
-    *   [ ] Copy `frontend/src/utils/api.ts` to `frontend-v2/src/utils/api.ts`. Verify imports.
+    *   [x] Copy `frontend/src/utils/api.ts` to `frontend-v2/src/utils/api.ts`. Verify imports.
     *   [ ] Copy contents of `frontend/public` to `frontend-v2/public`.
 
 **Phase 4: Refinement & Integration**

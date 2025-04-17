@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
-// import AppLayout from './components/AppLayout'; // Removed unused import
+import AppLayout from './components/AppLayout'; // Restore AppLayout import
+import TextsListPage from './pages/TextsListPage'; // Import the list page
+import TextDetailPage from './pages/TextDetailPage'; // Import the detail page
 import './App.css'; // Keep default App styles for now
 
 function HomePlaceholder() {
@@ -14,13 +16,15 @@ function HomePlaceholder() {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePlaceholder />} />
-      {/* Add other routes here later, e.g.: */}
-      {/* <Route path="/texts" element={<TextsListPage />} /> */}
-      {/* <Route path="/texts/:textId" element={<TextDetailPage />} /> */}
-      {/* <Route path="*" element={<NotFoundPage />} /> */}
-    </Routes>
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<HomePlaceholder />} />
+        <Route path="/texts" element={<TextsListPage />} />
+        <Route path="/texts/:textId" element={<TextDetailPage />} />
+        {/* Add other routes here later, e.g.: */}
+        {/* <Route path="*" element={<NotFoundPage />} /> */}
+      </Routes>
+    </AppLayout>
   );
 }
 
