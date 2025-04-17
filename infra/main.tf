@@ -312,9 +312,9 @@ resource "aws_amplify_app" "frontend_app" {
   # EOT
 
   # Environment variables managed by amplify.yml or local .env if needed
-  # environment_variables = {
-  #   VITE_API_URL = "https://${aws_apprunner_service.backend_service.service_url}" # Example if needed
-  # }
+  environment_variables = {
+    VITE_API_URL = "https://${aws_apprunner_service.backend_service.service_url}" # Example if needed
+  }
 
   # Custom rule for Single Page Application (SPA) routing (Vite)
   custom_rule {
