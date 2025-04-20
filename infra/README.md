@@ -21,17 +21,22 @@ This directory contains the Terraform configuration files used to define, provis
 
 ## Docker Image Building
 
-**Important:** When building Docker images for App Runner deployment, ensure you build for Linux architecture:
+### Building and Pushing the Backend Image
+
+Build the Docker image for the backend service, tagging it appropriately for your ECR repository, and push it.
 
 ```bash
-# From project root
-docker buildx build --platform linux/amd64 -t 480238144173.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest -f backend-ts/Dockerfile backend-ts
-```
+# BuildKit needed for multi-platform builds if your local machine isn't linux/amd64
+# export DOCKER_BUILDKIT=1 
 
-After building, push the image to ECR:
+# Build and tag
+docker buildx build --platform linux/amd64 -t YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest -f backend/Dockerfile backend
 
-```bash
-docker push 480238144173.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest
+# Login to ECR (Replace YOUR_AWS_ACCOUNT_ID and us-east-1 if different)
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+
+# Push
+docker push YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest
 ```
 
 ## Usage

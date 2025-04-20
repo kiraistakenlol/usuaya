@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 
-FRONTEND_PORT=3000
-# BACKEND_PORT=8000 # Removed
+FRONTEND_PORT=3000 # Keep the same port for now, Vite will use it
 
 echo "Checking for existing frontend process..."
 
@@ -21,48 +20,26 @@ kill_process_on_port() {
 }
 
 kill_process_on_port $FRONTEND_PORT
-# kill_process_on_port $BACKEND_PORT # Removed
-
-# BACKEND_NEW_PID="" # Removed
-
-# Function to clean up backend process on exit # Removed entire function
-# cleanup() { ... }
-
-# Trap SIGINT (Ctrl+C) and EXIT signals to run cleanup function # Removed
-# trap cleanup SIGINT EXIT
-
-# --- Removed Backend Starting Block --- START
-# echo "Starting backend in background (localhost:$BACKEND_PORT)..."
-# ( ... backend start logic ... ) 
-# echo "Backend process starting with PID $(cat backend.pid). Logging to backend.log"
-# echo "Waiting for backend to initialize (3s)..."
-# sleep 3 
-# if ! kill -0 $(cat backend.pid) 2>/dev/null; then ... exit ... fi
-# --- Removed Backend Starting Block --- END
 
 echo "Starting frontend in foreground (localhost:$FRONTEND_PORT)..."
 (
+  # Change directory to frontend
   cd frontend || exit 1
   # Check if node_modules exists, if not install dependencies
   if [ ! -d "node_modules" ]; then
       echo "Node modules not found in frontend/. Installing dependencies..."
-      npm install
+      # Run install from root for workspace consistency
+      (cd .. && npm install)
+      # If you prefer installing only for this workspace (might miss hoisted deps):
+      # npm install 
   fi
   echo "Running: npm run dev -- --port $FRONTEND_PORT"
-  # If npm run dev fails, the script will exit due to set -e
+  # npm run dev in frontend executes "vite". The -- --port passes the argument.
   # Press Ctrl+C in the terminal running this script to stop the frontend.
-  npm run dev -- --port $FRONTEND_PORT
+  npm run dev -- --port $FRONTEND_PORT 
 )
 
 # Normal exit (if frontend finishes without error)
 echo "Frontend process finished."
-
-# --- Removed Backend Cleanup Block --- START
-# rm -f backend.pid
-# echo "Frontend stopped. Stopping backend (PID $BACKEND_NEW_PID)..."
-# kill $BACKEND_NEW_PID
-# wait $BACKEND_NEW_PID 2>/dev/null 
-# echo "Backend stopped." 
-# --- Removed Backend Cleanup Block --- END
 
 echo "Script finished." 

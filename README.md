@@ -7,8 +7,8 @@ This project aims to streamline a personalized Spanish learning workflow by auto
 ### Prerequisites
 
 *   Docker & Docker Compose
-*   Node.js (check `frontend/package.json` for version, e.g., >= 18)
-*   Python 3 (check `PROJECT_STATUS.md` for specific version notes, e.g., 3.10+)
+*   Node.js (check `frontend/package.json` for version, e.g., >= 19)
+*   No Python needed.
 
 ### Running Locally
 
@@ -18,19 +18,18 @@ This project aims to streamline a personalized Spanish learning workflow by auto
     ```
     (Wait a few seconds for the database to initialize on first run).
 
-2.  **Install Dependencies (First Time Only):**
-    *   Backend: `cd backend-ts && npm install && cd ..`
-    *   Frontend: `cd frontend && npm install && cd ..`
+2.  **Install Dependencies (First Time Only):
+    *   Run `npm install` in the project root. This will install dependencies for all workspaces (`backend`, `frontend`, `packages/shared-types`).
 
 3.  **Start Backend:** Run the backend server in a separate terminal.
     ```bash
-    ./start-backend.sh 
+    ./start-backend.sh
     ```
     This script:
-    *   Stops any existing backend process (using port 8000 or the PID file).
-    *   Installs dependencies if needed (`backend-ts/node_modules`).
-    *   Starts the backend (NestJS) in the background (logging to `backend.log`).
-    *   Follows the logs in the current terminal (Press `Ctrl+C` to stop following logs; the backend will continue running).
+    *   Stops any existing backend process (using port 8000).
+    *   Installs dependencies if needed (`backend/node_modules`, though root install is preferred).
+    *   Starts the backend (NestJS) in the foreground (logging to terminal).
+    *   Press `Ctrl+C` to stop the backend.
 
 4.  **Start Frontend:** Run the frontend development server in another terminal.
     ```bash
@@ -38,15 +37,14 @@ This project aims to streamline a personalized Spanish learning workflow by auto
     ```
     This script:
     *   Stops any existing frontend process (using port 3000).
-    *   Installs dependencies if needed (`frontend/node_modules`).
-    *   Starts the frontend (Next.js) in the foreground at `http://localhost:3000`.
+    *   Installs dependencies if needed (`frontend/node_modules`, though root install is preferred).
+    *   Starts the frontend (Vite + React) in the foreground at `http://localhost:3000`.
     *   Press `Ctrl+C` in this terminal to stop the frontend server.
 
 5.  **Access the App:** Open `http://localhost:3000` in your browser.
 
-6.  **Stop Servers:** 
-    *   Press `Ctrl+C` in the terminal running `./start-frontend.sh` to stop the frontend.
-    *   To stop the backend, you can either run `./start-backend.sh` again (which will stop the old one before starting a new one, effectively just stopping it if you interrupt the script) or find and kill the process using the `backend.pid` file or port 8000.
+6.  **Stop Servers:**
+    *   Press `Ctrl+C` in the terminals running `./start-frontend.sh` and `./start-backend.sh`.
 
 ## Usage
 
@@ -60,16 +58,16 @@ The current version provides a web interface to:
 ## Key Technologies
 
 *   **Backend:** TypeScript (NestJS / TypeORM)
-*   **Frontend:** TypeScript (Next.js, React)
+*   **Frontend:** TypeScript (Vite, React, MUI, Tailwind)
 *   **Database:** PostgreSQL (via Docker)
-*   **LLM for Text Generation & Analysis:** Anthropic Claude 3.7 Sonnet (`claude-3-7-sonnet-20250219`)
+*   **LLM for Text Generation & Analysis:** Anthropic Claude / Grok
 *   **Audio Generation:** ElevenLabs
 
 Data is stored persistently in the PostgreSQL database managed by Docker Compose.
 
 ## Deployment
 
-Deployment is planned using AWS (App Runner, RDS, S3) managed via Terraform. Configuration and plans can be found in the `infra/` directory.
+Deployment is managed using AWS (App Runner, RDS, S3, Amplify Hosting) managed via Terraform. Configuration and plans can be found in the `infra/` directory.
 
 ## Text Generation: Creating Interactive Learning Data
 
