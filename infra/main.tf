@@ -289,11 +289,6 @@ resource "aws_apprunner_service" "backend_service" {
   }
 
   # Optional: Add health check config if needed
-  # health_check_configuration {
-  #   protocol = "TCP" # Or HTTP
-  #   port     = "8000" # Match image_configuration.port
-  #   # path = "/healthz" # If using HTTP
-  # }
 
   tags = {
     Name = "${var.project_name}-backend-service"
@@ -307,9 +302,6 @@ resource "aws_amplify_app" "frontend_app" {
   oauth_token = data.aws_secretsmanager_secret_version.github_token.secret_string
 
   # Build spec is now defined in amplify.yml in the repo root
-  # build_spec = <<-EOT
-  #   ...
-  # EOT
 
   # Environment variables managed by amplify.yml or local .env if needed
   environment_variables = {
@@ -346,13 +338,4 @@ resource "aws_amplify_branch" "frontend_branch" {
 # or allow broader access initially (e.g., from the default VPC SG).
 
 # --- RDS Security Group Rule (Manual Step Indicated) ---
-# resource "aws_security_group_rule" "allow_apprunner_to_rds" {
-#   type              = "ingress"
-#   from_port         = 5432
-#   to_port           = 5432
-#   protocol          = "tcp"
-#   security_group_id = aws_security_group.rds_sg.id
-#   # This source security group ID needs to be determined after App Runner VPC egress is configured
-#   # source_security_group_id = <App Runner Outbound Security Group ID> # Placeholder
-#   description = "Allow App Runner access to RDS"
-# } 
+# Removing commented-out aws_security_group_rule resource block 
