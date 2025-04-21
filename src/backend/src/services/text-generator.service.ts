@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LlmProvider } from '../llm/llm-provider.interface';
-import { IndexedWordSegment, TextAnalysis, VocabularyItem } from '@usuaya/shared-types';
+import { TextAnalysis, VocabularyItem, WordItemAnalysisLLMRequest } from '@usuaya/shared-types';
 @Injectable()
 export class TextGeneratorService {
   private readonly logger = new Logger(TextGeneratorService.name);
@@ -93,14 +93,15 @@ Instructions:
 
   // --- Method for Call 2 --- START
   // Expects FINAL AGREED SIMPLIFIED JSON from LLM and returns the corresponding SIMPLIFIED TextAnalysis structure
-  async analyzeIndexedWords(indexedWords: IndexedWordSegment[], vocabulary: VocabularyItem[]): Promise<{ parsedData: TextAnalysis; rawResponse: string; }> {
+  async analyzeIndexedWords(indexedWords: WordItemAnalysisLLMRequest[], vocabulary: VocabularyItem[]): Promise<{ parsedData: TextAnalysis; rawResponse: string; }> {
     // Prepare the input for the LLM
     const llmInput = { 
       indexed_word_segments: indexedWords,
       vocabulary: vocabulary
     };
     // User prompt remains the same structure, asking for analysis based on the input data
-    const userPrompt = `Please analyze the following indexed Spanish word segments, considering the provided vocabulary, and provide the full English translation and analysis according to the specified JSON schema:
+    const userPrompt = `Please analyze the following indexed Spanish word segments, considering the provided vocabulary, 
+    and provide the full English translation and analysis according to the specified JSON schema:
 
 \`\`\`json
 ${JSON.stringify(llmInput, null, 2)}
