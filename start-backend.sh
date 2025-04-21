@@ -46,7 +46,7 @@ echo "Starting new backend process (logging to terminal)..."
 echo "Press Ctrl+C to stop."
 echo "------------------------------------ "
 (
-    cd backend || exit 1
+    cd src/backend || exit 1
     if [ ! -d "node_modules" ]; then
         echo "Node modules not found. Installing dependencies..."
         npm install

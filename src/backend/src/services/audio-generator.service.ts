@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ElevenLabsClient } from 'elevenlabs';
-import { AudioStorageService } from './audio-storage.service';
+import { AudioStorageProvider } from '../audio-storage/audio-storage.provider';
 import { Readable } from 'stream';
 
 interface WordTiming {
@@ -20,7 +20,7 @@ export class AudioGeneratorService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly audioStorageService: AudioStorageService,
+    private readonly audioStorageProvider: AudioStorageProvider,
   ) {
     const apiKey = this.configService.get<string>('ELEVENLABS_API_KEY');
     const voiceId = this.configService.get<string>('ELEVENLABS_VOICE_ID');
@@ -57,7 +57,7 @@ export class AudioGeneratorService {
       });
       
       const audioBuffer = await this.streamToBuffer(audioStream);
-      const audioId = await this.audioStorageService.saveAudio(audioBuffer);
+      const audioId = await this.audioStorageProvider.saveAudio(audioBuffer);
       this.logger.log(`Audio generated and saved with ID: ${audioId}`);
       
       return audioId;
@@ -150,7 +150,7 @@ export class AudioGeneratorService {
   }
 
   async getAudioById(id: string): Promise<Buffer> {
-    const audio = await this.audioStorageService.getAudioById(id);
+    const audio = await this.audioStorageProvider.getAudioById(id);
     if (!audio) {
       throw new Error(`Audio with ID ${id} not found`);
     }

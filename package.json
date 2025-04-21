@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend",
-    "packages/shared-types"
+    "src/frontend",
+    "src/backend",
+    "src/shared-types"
   ],
   "scripts": {
     "build:shared": "npm run build -w @usuaya/shared-types",

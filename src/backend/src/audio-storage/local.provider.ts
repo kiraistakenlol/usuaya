@@ -10,10 +10,9 @@ export class LocalAudioStorageProvider extends AudioStorageProvider {
   private readonly logger = new Logger(LocalAudioStorageProvider.name);
   private readonly audioDir: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     super();
-    // Consider making the base path configurable via .env (e.g., LOCAL_STORAGE_PATH)
-    this.audioDir = path.resolve(configService.get<string>('LOCAL_AUDIO_PATH', './data/audio'));
+    this.audioDir = path.resolve(configService.get<string>('LOCAL_AUDIO_PATH', '../../data/audio'));
     
     try {
       if (!fs.existsSync(this.audioDir)) {
@@ -46,7 +45,6 @@ export class LocalAudioStorageProvider extends AudioStorageProvider {
   async getAudioById(id: string): Promise<Buffer | null> {
     const filename = `${id}.mp3`;
     const filePath = path.join(this.audioDir, filename);
-    this.logger.debug(`Attempting to retrieve local audio: ${filename}`);
     
     try {
       if (!fs.existsSync(filePath)) {
@@ -55,7 +53,7 @@ export class LocalAudioStorageProvider extends AudioStorageProvider {
       }
       
       const audioBuffer = await fs.promises.readFile(filePath);
-      this.logger.debug(`Retrieved local audio: ${filename}, size: ${audioBuffer.length} bytes`);
+      this.logger.log(`Retrieved local audio: ${filename}, size: ${audioBuffer.length} bytes`);
       return audioBuffer;
     } catch (error) {
       this.logger.error(`Failed to retrieve local audio ${filename}: ${error.message}`);

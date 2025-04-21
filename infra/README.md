@@ -30,7 +30,7 @@ Build the Docker image for the backend service, tagging it appropriately for you
 # export DOCKER_BUILDKIT=1 
 
 # Build and tag
-docker buildx build --platform linux/amd64 -t YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest -f backend/Dockerfile backend
+docker buildx build --platform linux/amd64 -t YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/usuaya/backend:latest -f src/backend/Dockerfile src/backend
 
 # Login to ECR (Replace YOUR_AWS_ACCOUNT_ID and us-east-1 if different)
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com

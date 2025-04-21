@@ -2,8 +2,8 @@
 backend.pid
 backend.log
 data/
-.env
-backend/.env
+# .env # Ignore file if at root (now moved)
+src/.env # Ignore file now it's in src/
 
 # Python cache files
 __pycache__/
@@ -11,8 +11,8 @@ __pycache__/
 *$py.class
 
 # Environment variables
-.env
-backend/.env
+# .env # Ignore file if at root (now moved)
+src/.env # Ignore file now it's in src/
 
 # Node modules
 node_modules/

@@ -24,7 +24,7 @@ kill_process_on_port $FRONTEND_PORT
 echo "Starting frontend in foreground (localhost:$FRONTEND_PORT)..."
 (
   # Change directory to frontend
-  cd frontend || exit 1
+  cd src/frontend || exit 1
   # Check if node_modules exists, if not install dependencies
   if [ ! -d "node_modules" ]; then
       echo "Node modules not found in frontend/. Installing dependencies..."

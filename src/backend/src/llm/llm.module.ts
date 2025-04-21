@@ -12,7 +12,6 @@ import { GrokProvider } from './grok.provider';
       provide: LlmProvider, // Provide the abstract class/token
       useFactory: (configService: ConfigService): LlmProvider => {
         const providerType = configService.get<string>('LLM_PROVIDER', 'anthropic').toLowerCase();
-        console.log(`Configuring LLM Provider: ${providerType}`); // Log selected provider
         if (providerType === 'grok') {
           return new GrokProvider(configService);
         } else if (providerType === 'anthropic') {

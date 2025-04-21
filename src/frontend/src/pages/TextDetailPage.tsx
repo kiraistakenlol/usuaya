@@ -65,14 +65,14 @@ function TextDetailPage() {
 
     // Effect to fetch audio blob when text is loaded
     useEffect(() => {
-        if (text && text.audio_id && !audioBlobUrl && !isAudioLoading) {
+        if (text && text.audio_id && !audioBlobUrl && !isAudioLoading && !audioError) {
             let objectUrl: string | null = null;
             const fetchAudio = async () => {
                 setIsAudioLoading(true);
                 setAudioError(null);
                 console.log(`[PAGE] Fetching audio blob for text ID: ${text.id}`);
                 try {
-                    const response = await fetch(`${API_URL}/texts/${text.id}/audio`);
+                    const response = await fetch(`${API_URL}/audio/${text.audio_id}`);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch audio (status: ${response.status})`);
                     }
@@ -104,7 +104,7 @@ function TextDetailPage() {
                 URL.revokeObjectURL(audioBlobUrl);
             }
         }
-    }, [text, audioBlobUrl, isAudioLoading]); // Dependencies adjusted
+    }, [text, audioBlobUrl, isAudioLoading, audioError]); // Dependencies adjusted
 
     // --- Player Callback Handlers ---
     const handleTimeUpdate = useCallback((time: number) => {

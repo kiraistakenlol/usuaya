@@ -3,7 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Audio } from '../entities/audio.entity';
 import { AudioService } from '../services/audio.service';
 import { AudioGeneratorService } from '../services/audio-generator.service';
-import { AudioStorageService } from '../services/audio-storage.service';
+import { AudioStorageProvider } from '../audio-storage/audio-storage.provider';
+import { LocalAudioStorageProvider } from '../audio-storage/local.provider';
 
 @Module({
   imports: [
@@ -12,12 +13,15 @@ import { AudioStorageService } from '../services/audio-storage.service';
   providers: [
     AudioService,
     AudioGeneratorService,
-    AudioStorageService,
+    {
+      provide: AudioStorageProvider,
+      useClass: LocalAudioStorageProvider,
+    },
   ],
   exports: [
     AudioService,
     AudioGeneratorService,
-    AudioStorageService,
+    AudioStorageProvider,
   ],
 })
 export class AudioModule {} 
