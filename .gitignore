@@ -11,8 +11,7 @@ __pycache__/
 *$py.class
 
 # Environment variables
-# .env # Ignore file if at root (now moved)
-src/.env # Ignore file now it's in src/
+.env 
 
 # Node modules
 node_modules/

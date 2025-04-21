@@ -16,7 +16,7 @@ export function convertTextEntityToDto(entity: Text): TextData {
     analysis_data: entity.analysis_data as TextAnalysis | null, // Keep direct assignment
     original_vocabulary: entity.original_vocabulary as VocabularyItem[] | null, // Keep direct assignment
     audio_id: entity.audio_id, // Now compatible with TextData type (string | null)
-    created_at: entity.created_at.toISOString(), // Manual transformation
+    created_at: entity.created_at.toISOString(),
     updated_at: entity.updated_at.toISOString(), // Manual transformation
   };
 
