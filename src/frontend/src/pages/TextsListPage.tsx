@@ -30,7 +30,7 @@ function TextsListPage() {
     const fetchTexts = async () => {
         setLoadingTexts(true);
         try {
-            const data = await fetchWithErrorHandling(`${API_URL}/texts`);
+            const data = await fetchWithErrorHandling<TextData[]>(`${API_URL}/texts`);
             setTexts(data);
             // setError(null); // Clear error only on full success?
         } catch (err) {
@@ -45,7 +45,7 @@ function TextsListPage() {
     const fetchVocabulary = async () => {
         setLoadingVocab(true);
         try {
-            const data = await fetchWithErrorHandling(`${API_URL}/phrases`);
+            const data = await fetchWithErrorHandling<VocabularyItem[]>(`${API_URL}/phrases`);
             // Use the fetched data which has { id: string, text: string }
             setVocabulary(data);
             // setError(null);

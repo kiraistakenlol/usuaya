@@ -23,7 +23,7 @@ function HomePage() {
             setLoading(true);
             setError(null);
             try {
-                const data = await fetchWithErrorHandling(`${API_URL}/phrases`);
+                const data = await fetchWithErrorHandling<VocabularyItem[]>(`${API_URL}/phrases`);
                 setVocabulary(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch vocabulary/phrases');
@@ -42,7 +42,7 @@ function HomePage() {
         setAddError(null);
 
         try {
-            const addedPhrase = await fetchWithErrorHandling(`${API_URL}/phrases`, {
+            const addedPhrase = await fetchWithErrorHandling<VocabularyItem>(`${API_URL}/phrases`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
