@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LlmProvider } from '../llm/llm-provider.interface';
-import { IndexedWordSegment, TextAnalysisData } from '@usuaya/shared-types';
+import { IndexedWordSegment, TextAnalysis, VocabularyItem } from '@usuaya/shared-types';
 @Injectable()
 export class TextGeneratorService {
   private readonly logger = new Logger(TextGeneratorService.name);
@@ -32,7 +32,7 @@ You MUST provide the analysis in the **JSON format** specified below, focusing O
 Input Format: The user will provide a JSON object:
 {
   "indexed_word_segments": [ { "index": <number>, "word": "<string>" } ], // Note: This text was generated based on the vocabulary below.
-  "vocabulary": [ { "id": "<unique_vocab_id>", "word": "<string>" } ]
+  "vocabulary": [ { "id": "<unique_vocab_id>", "text": "<string>" } ]
 }
 
 Output JSON Schema (Simplified):
@@ -92,8 +92,8 @@ Instructions:
   // --- Method for Call 1 --- END
 
   // --- Method for Call 2 --- START
-  // Expects FINAL AGREED SIMPLIFIED JSON from LLM and returns the corresponding SIMPLIFIED TextAnalysisData structure
-  async analyzeIndexedWords(indexedWords: IndexedWordSegment[], vocabulary: { id: string; word: string; }[]): Promise<{ parsedData: TextAnalysisData; rawResponse: string; }> {
+  // Expects FINAL AGREED SIMPLIFIED JSON from LLM and returns the corresponding SIMPLIFIED TextAnalysis structure
+  async analyzeIndexedWords(indexedWords: IndexedWordSegment[], vocabulary: VocabularyItem[]): Promise<{ parsedData: TextAnalysis; rawResponse: string; }> {
     // Prepare the input for the LLM
     const llmInput = { 
       indexed_word_segments: indexedWords,
@@ -127,7 +127,7 @@ ${JSON.stringify(llmInput, null, 2)}
         throw new Error('Failed to parse valid FINAL SIMPLIFIED JSON analysis from LLM Call 2.');
       }
 
-      // --- VALIDATE and MAP Final Simplified JSON to TextAnalysisData --- START
+      // --- VALIDATE and MAP Final Simplified JSON to TextAnalysis --- START
       // Basic validation of the received structure
       if (!parsedLlmData?.indexed_spanish_words ||
           !Array.isArray(parsedLlmData?.indexed_english_translation_words) ||
@@ -140,18 +140,18 @@ ${JSON.stringify(llmInput, null, 2)}
       // - Check if all original indices exist in indexed_spanish_words and alignment_spanish_to_english
       // - Check if alignment indices are valid for english_translation_tokens array length
 
-      // Map directly to the new TextAnalysisData structure
+      // Map directly to the new TextAnalysis structure
       // Note: We don't include spanish_plain or word_timings here, as they are added in TextService
-      const simplifiedParsedData: Partial<TextAnalysisData> = {
+      const simplifiedParsedData: Partial<TextAnalysis> = {
           indexed_spanish_words: parsedLlmData.indexed_spanish_words,
           indexed_english_translation_words: parsedLlmData.indexed_english_translation_words,
           alignment_spanish_to_english: parsedLlmData.alignment_spanish_to_english
       };
-      // --- VALIDATE and MAP Final Simplified JSON to TextAnalysisData --- END
+      // --- VALIDATE and MAP Final Simplified JSON to TextAnalysis --- END
 
       // Return the SIMPLIFIED parsed data and the original raw compact response
       return {
-        parsedData: simplifiedParsedData as TextAnalysisData, // Return the final simplified structure
+        parsedData: simplifiedParsedData as TextAnalysis, // Return the final simplified structure
         rawResponse: rawContent // The raw string received from LLM
       };
 

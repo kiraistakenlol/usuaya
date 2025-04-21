@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Phrase } from '../entities/phrase.entity';
-import { CreatePhraseDto, UpdatePhraseDto } from '../dto/phrase.dto';
+import { CreatePhraseDto, UpdatePhraseDto } from '@usuaya/shared-types';
 import { isUUID } from 'class-validator';
 
 @Injectable()

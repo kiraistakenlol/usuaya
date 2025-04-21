@@ -1,7 +1,5 @@
 import { Expose } from 'class-transformer';
 
-// --- Shared Primitive/Structure Types ---
-
 export class WordTiming {
   word!: string;
   start!: number;
@@ -18,38 +16,24 @@ export interface IndexedSpanishWordDetail {
   vocabulary_id: string | null;
 }
 
-// Represents the detailed analysis from the LLM
-export interface TextAnalysisData {
-    word_timings: IndexedWordSegment[]; // Timing with index from analysis
+export interface TextAnalysis {
+    word_timings: IndexedWordSegment[];
     indexed_spanish_words: Record<string, IndexedSpanishWordDetail>;
     indexed_english_translation_words: string[];
     alignment_spanish_to_english: Record<string, number[]>;
-    // Removed spanish_plain as it's redundant with indexed_spanish_words
 }
 
-// --- Shared Entity/DTO Types ---
-
-// Matches backend VocabularyItemDto/Phrase Entity
 export class VocabularyItem {
-  @Expose() id!: string; // Assuming UUID string from backend
-  @Expose() text!: string; // Renamed from word to match API
-}
-
-// Matches backend AudioResponseDto (relevant fields)
-export class AudioData {
   id!: string;
-  file_id!: string; 
-  word_timings!: WordTiming[]; // Simple WordTiming without index for audio playback
-  created_at!: string;
-  updated_at!: string;
+  text!: string;
 }
 
 export interface TextData {
   id: string;
   spanish_text: string;
-  analysis_data: TextAnalysisData | null;
+  analysis_data: TextAnalysis | null;
   original_vocabulary: VocabularyItem[] | null;
-  audio_id: string;
+  audio_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,13 +42,22 @@ export interface CreateTextDto {
   vocabulary: string[];
 }
 
-// Backend DTO for creating phrases (if needed, example)
 export interface CreatePhraseDto {
   text: string;
 }
-
-// Frontend Phrase type (assuming integer ID from old definition)
 export class Phrase {
   id!: number;
   text!: string;
+}
+
+export class CreatePhraseDto {
+  text!: string;
+  translation?: string;
+  notes?: string;
+}
+
+export class UpdatePhraseDto {
+  text?: string;
+  translation?: string;
+  notes?: string;
 } 

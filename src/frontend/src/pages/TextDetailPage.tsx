@@ -6,7 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import {API_URL, fetchWithErrorHandling} from '../utils/api';
-import {TextAnalysisData, TextData, VocabularyItem} from '@usuaya/shared-types';
+import {TextAnalysis, TextData, VocabularyItem} from '@usuaya/shared-types';
 import AudioPlayer, {AudioPlayerActions} from '../components/AudioPlayer';
 
 function TextDetailPage() {
@@ -49,7 +49,7 @@ function TextDetailPage() {
             setAudioError(null); // Reset audio error
             try {
                 console.log(`[PAGE] Fetching text ID: ${textId}`);
-                const data = await fetchWithErrorHandling(`${API_URL}/texts/${textId}`);
+                const data = await fetchWithErrorHandling<TextData>(`${API_URL}/texts/${textId}`);
                 console.log("[PAGE] Text data received:", data);
                 setText(data);
             } catch (err) {
@@ -184,7 +184,7 @@ function TextDetailPage() {
 
     // --- Highlight Logic ---
     const highlightSpanishIndex = useMemo(() => {
-        const analysisData = text?.analysis_data as TextAnalysisData | null | undefined;
+        const analysisData = text?.analysis_data as TextAnalysis | null | undefined;
         const wordTimings = analysisData?.word_timings;
         if (!wordTimings || !isPlaying || wordTimings.length === 0) return -1;
 
@@ -217,7 +217,7 @@ function TextDetailPage() {
 
     // --- Render Functions ---
     const renderSpanishText = () => {
-        const analysisData = text?.analysis_data as TextAnalysisData | null | undefined;
+        const analysisData = text?.analysis_data as TextAnalysis | null | undefined;
         const wordTimings = analysisData?.word_timings;
         const spanishWordMap = analysisData?.indexed_spanish_words;
         if (!wordTimings || !spanishWordMap) return <Typography color="error">Analysis data missing for Spanish
@@ -273,7 +273,7 @@ function TextDetailPage() {
     };
 
     const renderEnglishText = () => {
-        const analysisData = text?.analysis_data as TextAnalysisData | null | undefined;
+        const analysisData = text?.analysis_data as TextAnalysis | null | undefined;
         const englishTokens = analysisData?.indexed_english_translation_words;
         if (!englishTokens) return <Typography color="error">English translation not available.</Typography>;
 

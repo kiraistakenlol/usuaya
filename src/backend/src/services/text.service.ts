@@ -5,7 +5,7 @@ import { Text } from '../entities/text.entity';
 import { TextGeneratorService } from './text-generator.service';
 import { AudioService } from './audio.service';
 import { isUUID } from 'class-validator';
-import { TextAnalysisData, IndexedWordSegment, CreateTextDto } from '@usuaya/shared-types';
+import { TextAnalysis, IndexedWordSegment, CreateTextDto, VocabularyItem } from '@usuaya/shared-types';
 
 @Injectable()
 export class TextService {
@@ -45,7 +45,7 @@ export class TextService {
       this.logger.log(`Step 3 Complete: Prepared ${indexedTimings.length} Indexed Timings`);
 
       // Prepare structured vocabulary
-      const structuredVocabulary = createTextDto.vocabulary.map((word, index) => ({ id: `vocab_${index}`, word: word }));
+      const structuredVocabulary = createTextDto.vocabulary.map((word, index) => ({ id: `vocab_${index}`, text: word } as VocabularyItem));
       // Remove debug log of full vocab
       // this.logger.debug('Structured Vocabulary prepared:', JSON.stringify(structuredVocabulary, null, 2));
 
@@ -62,7 +62,7 @@ export class TextService {
       this.logger.log(`Step 4 Complete: Generated Final Simplified Analysis (Parsed)`); // Simplified step log
       
       // 5. Combine into final structure
-      const analysisDataForDb: TextAnalysisData = {
+      const analysisDataForDb: TextAnalysis = {
         word_timings: indexedTimings, 
         indexed_spanish_words: finalSimplifiedAnalysis.indexed_spanish_words,
         indexed_english_translation_words: finalSimplifiedAnalysis.indexed_english_translation_words,
@@ -112,11 +112,10 @@ export class TextService {
       this.logger.log(`Finding text with ID: ${id}`);
       const text = await this.textRepository.findOne({
         where: { id },
-        relations: { phrases: true },
         select: {
           id: true,
           spanish_text: true,
-          analysis_data: true, // This contains the full TextAnalysisData structure
+          analysis_data: true, // This contains the full TextAnalysis structure
           original_vocabulary: true, // Select the vocabulary
           audio_id: true, // The direct file ID
           created_at: true,

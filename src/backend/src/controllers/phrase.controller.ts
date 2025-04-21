@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PhraseService } from '../services/phrase.service';
-import { CreatePhraseDto, UpdatePhraseDto } from '../dto/phrase.dto';
+import { CreatePhraseDto, UpdatePhraseDto } from '@usuaya/shared-types';
 import { isUUID } from 'class-validator';
 
 @Controller('phrases')
