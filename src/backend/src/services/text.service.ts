@@ -98,7 +98,7 @@ export class TextService {
 
     async findAll(): Promise<Text[]> {
         return await this.textRepository.find({
-            select: ['id', 'spanish_text', 'created_at', 'audio_id'],
+            select: ['id', 'spanish_text', 'created_at', 'audio_id', 'updated_at'],
             order: {
                 created_at: 'DESC'
             }

@@ -8,8 +8,8 @@ export function convertTextEntityToDto(entity: Text): TextData {
     analysis_data: entity.analysis_data as TextAnalysis | null,
     original_vocabulary: entity.original_vocabulary as VocabularyItem[] | null,
     audio_id: entity.audio_id,
-    created_at: entity.created_at.toISOString(),
-    updated_at: entity.updated_at.toISOString(),
+    created_at: entity.created_at ? entity.created_at.toISOString() : "",
+    updated_at: entity.updated_at ? entity.updated_at.toISOString() : '',
   };
 
   return data;
