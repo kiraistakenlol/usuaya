@@ -8,7 +8,6 @@ This project aims to streamline a personalized Spanish learning workflow by auto
 
 *   Docker & Docker Compose
 *   Node.js (check `frontend/package.json` for version, e.g., >= 19)
-*   No Python needed.
 
 ### Running Locally
 

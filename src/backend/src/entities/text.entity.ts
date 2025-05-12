@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToOne, JoinColumn } from 'typeorm';
 import { Phrase } from './phrase.entity';
 import { Audio } from './audio.entity';
-import {TextAnalysis, VocabularyItem} from '@usuaya/shared-types';
+import { TextAnalysis } from '@usuaya/shared-types';
 
 @Entity('text')
 export class Text {
@@ -29,7 +29,7 @@ export class Text {
   analysis_data: TextAnalysis | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  original_vocabulary: VocabularyItem[] | null;
+  original_vocabulary: string[] | null;
 
   @OneToOne(() => Audio, audio => audio.text, { cascade: true, nullable: true })
   @JoinColumn({ name: 'audio_id' })

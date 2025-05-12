@@ -22,16 +22,11 @@ export interface TextAnalysis {
     alignment_spanish_to_english: Record<string, number[]>;
 }
 
-export class VocabularyItem {
-    id!: number;
-    text!: string;
-}
-
 export interface TextData {
     id: string;
     spanish_text: string;
     analysis_data: TextAnalysis | null;
-    original_vocabulary: VocabularyItem[] | null;
+    original_vocabulary: string[];
     audio_id: string | null;
     created_at: string;
     updated_at: string;

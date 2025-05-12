@@ -9,10 +9,10 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import {API_URL, fetchWithErrorHandling} from '../utils/api';
-import {VocabularyItem} from '@usuaya/shared-types';
+import { Phrase } from '@usuaya/shared-types';
 
 function HomePage() {
-    const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+    const [vocabulary, setVocabulary] = useState<Phrase[]>([]);
     const [newPhrase, setNewPhrase] = useState('');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,7 +23,7 @@ function HomePage() {
             setLoading(true);
             setError(null);
             try {
-                const data = await fetchWithErrorHandling<VocabularyItem[]>(`${API_URL}/phrases`);
+                const data = await fetchWithErrorHandling<Phrase[]>(`${API_URL}/phrases`);
                 setVocabulary(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch vocabulary/phrases');
@@ -42,7 +42,7 @@ function HomePage() {
         setAddError(null);
 
         try {
-            const addedPhrase = await fetchWithErrorHandling<VocabularyItem>(`${API_URL}/phrases`, {
+            const addedPhrase = await fetchWithErrorHandling<Phrase>(`${API_URL}/phrases`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,0 +1,161 @@
+{
+    "word_timings": [
+        {
+            "end": 0.244,
+            "word": "Vos",
+            "start": 0,
+            "confidence": 1
+        },
+        {
+            "end": 0.546,
+            "word": "tenés",
+            "start": 0.302,
+            "confidence": 1
+        },
+        {
+            "end": 0.755,
+            "word": "una",
+            "start": 0.627,
+            "confidence": 1
+        },
+        {
+            "end": 1.091,
+            "word": "casa",
+            "start": 0.813,
+            "confidence": 1
+        },
+        {
+            "end": 1.277,
+            "word": "re",
+            "start": 1.184,
+            "confidence": 1
+        },
+        {
+            "end": 1.602,
+            "word": "linda",
+            "start": 1.324,
+            "confidence": 1
+        },
+        {
+            "end": 1.672,
+            "word": "en",
+            "start": 1.625,
+            "confidence": 1
+        },
+        {
+            "end": 1.776,
+            "word": "el",
+            "start": 1.73,
+            "confidence": 1
+        },
+        {
+            "end": 2.101,
+            "word": "barrio",
+            "start": 1.823,
+            "confidence": 1
+        },
+        {
+            "end": 2.183,
+            "word": "de",
+            "start": 2.125,
+            "confidence": 1
+        },
+        {
+            "end": 2.74,
+            "word": "Palermo",
+            "start": 2.229,
+            "confidence": 1
+        }
+    ],
+    "indexed_spanish_words": {
+        "0": {
+            "text": "Vos",
+            "vocabulary_id": null
+        },
+        "1": {
+            "text": "tenés",
+            "vocabulary_id": null
+        },
+        "2": {
+            "text": "una",
+            "vocabulary_id": null
+        },
+        "3": {
+            "text": "casa",
+            "vocabulary_id": 0
+        },
+        "4": {
+            "text": "re",
+            "vocabulary_id": null
+        },
+        "5": {
+            "text": "linda",
+            "vocabulary_id": null
+        },
+        "6": {
+            "text": "en",
+            "vocabulary_id": null
+        },
+        "7": {
+            "text": "el",
+            "vocabulary_id": null
+        },
+        "8": {
+            "text": "barrio",
+            "vocabulary_id": null
+        },
+        "9": {
+            "text": "de",
+            "vocabulary_id": null
+        },
+        "10": {
+            "text": "Palermo",
+            "vocabulary_id": null
+        }
+    },
+    "alignment_spanish_to_english": {
+        "0": [
+            0
+        ],
+        "1": [
+            1
+        ],
+        "2": [
+            2
+        ],
+        "3": [
+            5
+        ],
+        "4": [
+            3
+        ],
+        "5": [
+            4
+        ],
+        "6": [
+            6
+        ],
+        "7": [
+            7
+        ],
+        "8": [
+            9
+        ],
+        "9": [],
+        "10": [
+            8
+        ]
+    },
+    "indexed_english_translation_words": [
+        "You",
+        "have",
+        "a",
+        "really",
+        "beautiful",
+        "house",
+        "in",
+        "the",
+        "Palermo",
+        "neighborhood"
+    ]
+}

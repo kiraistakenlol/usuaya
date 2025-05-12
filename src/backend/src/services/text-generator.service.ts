@@ -1,9 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LlmProvider } from '../llm/llm-provider.interface';
-import { TextAnalysis, VocabularyItem, WordItemAnalysisLLMRequest } from '@usuaya/shared-types';
+import { TextAnalysis, WordItemAnalysisLLMRequest, WordTiming } from '@usuaya/shared-types';
+
+export interface TextGeneratorService {
+  generateSimpleText(vocabulary: string[]): Promise<{ text: string, promptUsed: string }>;
+  analyzeIndexedWords(
+    rawWordTimings: WordTiming[],
+    vocabulary: string[]
+  ): Promise<{ parsedData: TextAnalysis; rawResponse: string; llmInput: object }>;
+}
+
+export interface VocabularyItem {
+  id: number;
+  text: string;
+}
+
 @Injectable()
-export class TextGeneratorService {
+export class TextGeneratorService implements TextGeneratorService {
   private readonly logger = new Logger(TextGeneratorService.name);
 
   constructor(
@@ -93,14 +107,37 @@ Instructions:
 
   // --- Method for Call 2 --- START
   // Expects FINAL AGREED SIMPLIFIED JSON from LLM and returns the corresponding SIMPLIFIED TextAnalysis structure
-  async analyzeIndexedWords(indexedWords: WordItemAnalysisLLMRequest[], vocabulary: VocabularyItem[]): Promise<{ parsedData: TextAnalysis; rawResponse: string; }> {
-    // Prepare the input for the LLM
+  async analyzeIndexedWords(
+    rawWordTimings: WordTiming[],
+    vocabulary: string[]
+  ): Promise<{ parsedData: TextAnalysis; rawResponse: string; llmInput: object; }> {
+
+    // Perform indexing here
+    if (!rawWordTimings) {
+        // This case should ideally be prevented by the caller (TextService)
+        this.logger.error('Raw word timings are missing for analysis.');
+        throw new Error('Raw word timings are missing.');
+    }
+    const indexedWordSegments: WordItemAnalysisLLMRequest[] = rawWordTimings
+        .map((timing: WordTiming, index: number) => ({
+            word: timing.word,
+            index: index
+        } as WordItemAnalysisLLMRequest));
+    this.logger.log(`Prepared ${indexedWordSegments.length} Indexed Timings from raw word timings.`);
+
+    // Prepare structured vocabulary
+    const indexedVocabulary: VocabularyItem[] = vocabulary.map((word: string, index: number) => ({
+      id: index,
+      text: word
+  } as VocabularyItem));
+  
+    // Prepare the input for the LLM using the newly indexed segments
     const llmInput = { 
-      indexed_word_segments: indexedWords,
-      vocabulary: vocabulary
+      indexed_word_segments: indexedWordSegments,
+      vocabulary: indexedVocabulary
     };
     // User prompt remains the same structure, asking for analysis based on the input data
-    const userPrompt = `Please analyze the following indexed Spanish word segments, considering the provided vocabulary, 
+    const userPrompt = `Analyze the following indexed Spanish word segments, considering the provided vocabulary, 
     and provide the full English translation and analysis according to the specified JSON schema:
 
 \`\`\`json
@@ -109,7 +146,7 @@ ${JSON.stringify(llmInput, null, 2)}
 `;
 
     this.logger.log('--- Calling LlmProvider.generateJsonResponse (expecting FINAL simplified structure) --- ');
-    this.logger.debug('Vocabulary being sent:', JSON.stringify(llmInput.vocabulary, null, 2)); // Log the structured vocabulary
+    this.logger.debug('Vocabulary being sent:', JSON.stringify(llmInput.vocabulary, null, 2));
 
     try {
       const llmResponse = await this.llmProvider.generateJsonResponse(userPrompt, this.ANALYSIS_PROMPT);
@@ -129,7 +166,6 @@ ${JSON.stringify(llmInput, null, 2)}
       }
 
       // --- VALIDATE and MAP Final Simplified JSON to TextAnalysis --- START
-      // Basic validation of the received structure
       if (!parsedLlmData?.indexed_spanish_words ||
           !Array.isArray(parsedLlmData?.indexed_english_translation_words) ||
           !parsedLlmData?.alignment_spanish_to_english) {
@@ -137,12 +173,6 @@ ${JSON.stringify(llmInput, null, 2)}
           throw new Error('Final Simplified JSON response from LLM Call 2 is incomplete.');
       }
 
-      // Further validation (optional but recommended)
-      // - Check if all original indices exist in indexed_spanish_words and alignment_spanish_to_english
-      // - Check if alignment indices are valid for english_translation_tokens array length
-
-      // Map directly to the new TextAnalysis structure
-      // Note: We don't include spanish_plain or word_timings here, as they are added in TextService
       const simplifiedParsedData: Partial<TextAnalysis> = {
           indexed_spanish_words: parsedLlmData.indexed_spanish_words,
           indexed_english_translation_words: parsedLlmData.indexed_english_translation_words,
@@ -150,10 +180,10 @@ ${JSON.stringify(llmInput, null, 2)}
       };
       // --- VALIDATE and MAP Final Simplified JSON to TextAnalysis --- END
 
-      // Return the SIMPLIFIED parsed data and the original raw compact response
       return {
-        parsedData: simplifiedParsedData as TextAnalysis, // Return the final simplified structure
-        rawResponse: rawContent // The raw string received from LLM
+        parsedData: simplifiedParsedData as TextAnalysis,
+        rawResponse: rawContent,
+        llmInput
       };
 
     } catch (error) {

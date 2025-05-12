@@ -1,5 +1,5 @@
-import React, {FormEvent, useEffect, useState} from 'react';
-import {Link as RouterLink} from 'react-router-dom';
+import React, { FormEvent, useEffect, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
@@ -12,13 +12,13 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import {API_URL, fetchWithErrorHandling} from '../utils/api';
-import {TextData, VocabularyItem} from '@usuaya/shared-types';
+import { API_URL, fetchWithErrorHandling } from '../utils/api';
+import { Phrase, TextData } from '@usuaya/shared-types';
 
 
 function TextsListPage() {
     const [texts, setTexts] = useState<TextData[]>([]);
-    const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]); // Existing phrases/vocab
+    const [vocabulary, setVocabulary] = useState<Phrase[]>([]); // Existing phrases/vocab
     const [manualInput, setManualInput] = useState(''); // For the textarea
 
     const [loadingTexts, setLoadingTexts] = useState(true);
@@ -45,7 +45,7 @@ function TextsListPage() {
     const fetchVocabulary = async () => {
         setLoadingVocab(true);
         try {
-            const data = await fetchWithErrorHandling<VocabularyItem[]>(`${API_URL}/phrases`);
+            const data = await fetchWithErrorHandling<Phrase[]>(`${API_URL}/phrases`);
             // Use the fetched data which has { id: string, text: string }
             setVocabulary(data);
             // setError(null);
@@ -89,8 +89,8 @@ function TextsListPage() {
             // Assuming POST /texts expects { vocabulary: string[] }
             await fetchWithErrorHandling(`${API_URL}/texts`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({vocabulary: combinedVocab}),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vocabulary: combinedVocab }),
             });
             // Success! Refetch texts and clear input
             await fetchTexts();
@@ -106,19 +106,19 @@ function TextsListPage() {
     };
 
     return (
-        <Box sx={{maxWidth: 1200, mx: 'auto', p: 2}}>
-            <Typography variant="h4" component="h1" gutterBottom sx={{fontWeight: 'bold'}}>
+        <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 My Texts
             </Typography>
 
             {error && (
-                <Alert severity="error" sx={{mb: 2}} onClose={() => setError(null)}>
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
                     {error}
                 </Alert>
             )}
 
             {/* --- Create New Text Section --- */}
-            <Paper elevation={2} sx={{mb: 4, p: 3}}>
+            <Paper elevation={2} sx={{ mb: 4, p: 3 }}>
                 <Typography variant="h6" component="h2" gutterBottom>
                     Create New Text
                 </Typography>
@@ -126,8 +126,8 @@ function TextsListPage() {
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 2 }}>
                         {/* Vocabulary Selection Box item */}
                         <Box sx={{ flex: '1 1 400px', minWidth: '300px' }}>
-                            <Paper variant="outlined" sx={{p: 2, bgcolor: 'grey.50', height: '300px'}}>
-                                <Typography variant="subtitle2" component="label" sx={{mb: 1, display: 'block'}}>
+                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50', height: '300px' }}>
+                                <Typography variant="subtitle2" component="label" sx={{ mb: 1, display: 'block' }}>
                                     Add Word from Vocabulary (Click to add):
                                 </Typography>
                                 {loadingVocab ? (
@@ -137,13 +137,13 @@ function TextsListPage() {
                                         alignItems: 'center',
                                         height: 'calc(100% - 30px)'
                                     }}>
-                                        <CircularProgress size={24}/>
+                                        <CircularProgress size={24} />
                                     </Box>
                                 ) : (
                                     <Paper variant="outlined"
-                                           sx={{height: 'calc(100% - 30px)', overflowY: 'auto', bgcolor: 'white'}}>
+                                        sx={{ height: 'calc(100% - 30px)', overflowY: 'auto', bgcolor: 'white' }}>
                                         {vocabulary.length === 0 ? (
-                                            <Typography variant="body2" sx={{p: 1, color: 'text.secondary'}}>
+                                            <Typography variant="body2" sx={{ p: 1, color: 'text.secondary' }}>
                                                 No vocabulary found. Add some on the home page.
                                             </Typography>
                                         ) : (
@@ -153,9 +153,9 @@ function TextsListPage() {
                                                         {/* Use item.text based on previous fix */}
                                                         <ListItemButton onClick={() => handleAddVocabWord(item.text)}>
                                                             <ListItemText primary={item.text}
-                                                                          primaryTypographyProps={{variant: 'body2'}}/>
+                                                                primaryTypographyProps={{ variant: 'body2' }} />
                                                         </ListItemButton>
-                                                        {index < vocabulary.length - 1 && <Divider/>}
+                                                        {index < vocabulary.length - 1 && <Divider />}
                                                     </React.Fragment>
                                                 ))}
                                             </List>
@@ -167,9 +167,9 @@ function TextsListPage() {
 
                         {/* Manual Input Area Box item */}
                         <Box sx={{ flex: '1 1 400px', minWidth: '300px' }}>
-                            <Paper variant="outlined" sx={{p: 2, bgcolor: 'grey.50', height: '300px'}}>
+                            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50', height: '300px' }}>
                                 <Typography variant="subtitle2" component="label" htmlFor="manual-input"
-                                            sx={{mb: 1, display: 'block'}}>
+                                    sx={{ mb: 1, display: 'block' }}>
                                     Vocabulary for New Text (one per line):
                                 </Typography>
                                 <TextField
@@ -181,20 +181,20 @@ function TextsListPage() {
                                     onChange={(e) => setManualInput(e.target.value)}
                                     placeholder={`Type words here,\nor click list on left...\n--------------------\nHola\n¿Cómo estás?\n...`}
                                     variant="outlined"
-                                    InputProps={{sx: {bgcolor: 'white', height: '100%'}}}
-                                    sx={{height: 'calc(100% - 30px)'}}
+                                    InputProps={{ sx: { bgcolor: 'white', height: '100%' } }}
+                                    sx={{ height: 'calc(100% - 30px)' }}
                                 />
                             </Paper>
                         </Box>
                     </Box>
 
                     {/* Submit Button */}
-                    <Box sx={{display: 'flex', justifyContent: 'flex-end'}}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                         <Button
                             type="submit"
                             variant="contained"
                             disabled={generating}
-                            startIcon={generating ? <CircularProgress size={20} color="inherit"/> : null}
+                            startIcon={generating ? <CircularProgress size={20} color="inherit" /> : null}
                         >
                             {generating ? 'Generating...' : 'Generate Text'}
                         </Button>
@@ -203,13 +203,13 @@ function TextsListPage() {
             </Paper>
 
             {/* --- List of Existing Texts --- */}
-            <Paper elevation={2} sx={{mb: 4}}>
-                <Typography variant="h6" component="h2" sx={{p: 2, borderBottom: '1px solid', borderColor: 'divider'}}>
+            <Paper elevation={2} sx={{ mb: 4 }}>
+                <Typography variant="h6" component="h2" sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                     Existing Texts
                 </Typography>
                 {loadingTexts ? (
-                    <Box sx={{display: 'flex', justifyContent: 'center', py: 4}}>
-                        <CircularProgress/>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                        <CircularProgress />
                     </Box>
                 ) : texts && texts.length > 0 ? (
                     <List disablePadding>
@@ -219,16 +219,16 @@ function TextsListPage() {
                                     <ListItemText
                                         primary={text.spanish_text || `Text ${text.id}`}
                                         secondary={new Date(text.created_at).toLocaleString()}
-                                        primaryTypographyProps={{fontWeight: 'medium'}}
+                                        primaryTypographyProps={{ fontWeight: 'medium' }}
                                     />
-                                    <ChevronRightIcon color="action"/>
+                                    <ChevronRightIcon color="action" />
                                 </ListItemButton>
-                                {index < texts.length - 1 && <Divider component="li"/>}
+                                {index < texts.length - 1 && <Divider component="li" />}
                             </React.Fragment>
                         ))}
                     </List>
                 ) : (
-                    <Typography sx={{p: 2, color: 'text.secondary'}}>
+                    <Typography sx={{ p: 2, color: 'text.secondary' }}>
                         No texts found.
                     </Typography>
                 )}

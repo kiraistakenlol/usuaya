@@ -1,11 +1,11 @@
-import {BadRequestException, Injectable, Logger, NotFoundException} from '@nestjs/common';
-import {InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm';
-import {Text} from '../entities/text.entity';
-import {TextGeneratorService} from './text-generator.service';
-import {AudioService} from './audio.service';
-import {isUUID} from 'class-validator';
-import {CreateTextDto, TextAnalysis, VocabularyItem, WordItemAnalysisLLMRequest} from '@usuaya/shared-types';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Text } from '../entities/text.entity';
+import { TextGeneratorService } from './text-generator.service';
+import { AudioService } from './audio.service';
+import { isUUID } from 'class-validator';
+import { CreateTextDto, TextAnalysis } from '@usuaya/shared-types';
 
 @Injectable()
 export class TextService {
@@ -31,47 +31,39 @@ export class TextService {
             // 1. Generate Spanish Text & Capture Prompt
             const generationResult = await this.textGeneratorService.generateSimpleText(createTextDto.vocabulary);
             const spanishText = generationResult.text;
-            generationPrompt = generationResult.promptUsed; // Keep for DB
-            rawGenerationResponse = spanishText; // Keep for DB
-            this.logger.log(`Step 1 Complete: Generated Spanish Text (${spanishText.length} chars)`); // Keep step log
+            generationPrompt = generationResult.promptUsed;
+            rawGenerationResponse = spanishText;
+            this.logger.log(`Step 1 Complete: Generated Spanish Text (${spanishText.length} chars)`);
 
             // 2. Generate Audio Entity
             const audioEntity = await this.audioService.generateAudio(spanishText);
             this.logger.log(`Step 2 Complete: Generated Audio Entity ID: ${audioEntity.id}, File ID: ${audioEntity.file_id}`);
 
-            // 3. Preprocess Timings
-            if (!audioEntity.word_timings) {
-                throw new Error('Word timings missing...');
+            const word_timings = audioEntity.word_timings;
+            if (!word_timings) {
+                throw new Error('Word timings missing from audio service response.');
             }
-            const indexedTimings: WordItemAnalysisLLMRequest[] = audioEntity.word_timings.map((timing, index) => ({
-                word: timing.word,
-                index: index
-            } as WordItemAnalysisLLMRequest));
-            this.logger.log(`Step 3 Complete: Prepared ${indexedTimings.length} Indexed Timings`);
 
-            // Prepare structured vocabulary
-            const vocabulary = createTextDto.vocabulary.map((word, index) => ({
-                id: index,
-                text: word
-            } as VocabularyItem));
+            const vocabulary = createTextDto.vocabulary;
 
-            // Prepare request payload for analysis (for DB logging)
-            analysisRequest = {indexed_word_segments: indexedTimings, vocabulary: vocabulary};
+            // 4. Analyze Words
+            const {
+                parsedData: textAnalysis,
+                rawResponse: rawAnalysisLlmResponse,
+                llmInput
+            } =
+                await this.textGeneratorService.analyzeIndexedWords(word_timings, vocabulary);
 
-            // 4. Analyze Indexed Words (Final Simplified)
-            const {parsedData: finalSimplifiedAnalysis, rawResponse: rawAnalysisLlmResponse} =
-                await this.textGeneratorService.analyzeIndexedWords(indexedTimings,
-                    vocabulary
-                );
-            rawAnalysisResponse = rawAnalysisLlmResponse; // Keep for DB
-            this.logger.log(`Step 4 Complete: Generated Final Simplified Analysis (Parsed)`); // Simplified step log
+            analysisRequest = llmInput;
+            rawAnalysisResponse = rawAnalysisLlmResponse;
+            this.logger.log(`Step 4 Complete: Generated Final Simplified Analysis (Parsed)`);
 
-            // 5. Combine into final structure
+            // 5. Combine into final structure for analysis_data
             const analysisDataForDb: TextAnalysis = {
-                word_timings: audioEntity.word_timings,
-                indexed_spanish_words: finalSimplifiedAnalysis.indexed_spanish_words,
-                indexed_english_translation_words: finalSimplifiedAnalysis.indexed_english_translation_words,
-                alignment_spanish_to_english: finalSimplifiedAnalysis.alignment_spanish_to_english
+                word_timings: word_timings,
+                indexed_spanish_words: textAnalysis.indexed_spanish_words,
+                indexed_english_translation_words: textAnalysis.indexed_english_translation_words,
+                alignment_spanish_to_english: textAnalysis.alignment_spanish_to_english,
             };
 
             // 6. Create and save Text entity
@@ -90,7 +82,6 @@ export class TextService {
             this.logger.log(`Step 6 Complete: Text saved with ID: ${savedText.id}`);
             return savedText;
         } catch (error) {
-            // Keep simplified error log
             this.logger.error(`Text creation process failed: ${error.message}`, error.stack);
             throw error;
         }
@@ -113,7 +104,7 @@ export class TextService {
         try {
             this.logger.log(`Finding text with ID: ${id}`);
             const text = await this.textRepository.findOne({
-                where: {id},
+                where: { id },
                 select: {
                     id: true,
                     spanish_text: true,

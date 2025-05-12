@@ -1,16 +1,16 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Link as RouterLink, useParams} from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import {API_URL, fetchWithErrorHandling} from '../utils/api';
-import {TextAnalysis, TextData, VocabularyItem} from '@usuaya/shared-types';
-import AudioPlayer, {AudioPlayerActions} from '../components/AudioPlayer';
+import { API_URL, fetchWithErrorHandling } from '../utils/api';
+import { TextAnalysis, TextData} from '@usuaya/shared-types';
+import AudioPlayer, { AudioPlayerActions } from '../components/AudioPlayer';
 
 function TextDetailPage() {
-    const {textId} = useParams<{ textId: string }>();
+    const { textId } = useParams<{ textId: string }>();
     const [text, setText] = useState<TextData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -239,35 +239,35 @@ function TextDetailPage() {
             else if (isHoverWord) backgroundColor = '#e0e0e0';
 
             return (
-                <span key={index} style={{display: 'inline-block'}}>
-                  <span
-                      onMouseEnter={() => {
-                          setHoveredSpanishIndex(index);
-                          const alignment = analysisData?.alignment_spanish_to_english;
-                          const englishIndices = alignment?.[String(index)] ?? [];
-                          setHoveredEnglishIndices(new Set(englishIndices));
-                      }}
-                      onMouseLeave={() => {
-                          setHoveredSpanishIndex(null);
-                          setHoveredEnglishIndices(new Set());
-                      }}
-                      onClick={() => handleWordClick(index)}
-                      style={{
-                          cursor: 'pointer',
-                          padding: '1px 2px',
-                          margin: '0 1px',
-                          borderRadius: '3px',
-                          backgroundColor: backgroundColor,
-                          color: isCurrentWord ? 'white' : '#333',
-                          fontWeight: isVocabWord ? 'bold' : (isCurrentWord ? 'bold' : 'normal'),
-                          border: isHoverWord ? '1px solid #ccc' : 'none',
-                      }}
-                      className="word-span"
-                  >
-                      {spanishWordDetail.text}
-                  </span>
+                <span key={index} style={{ display: 'inline-block' }}>
+                    <span
+                        onMouseEnter={() => {
+                            setHoveredSpanishIndex(index);
+                            const alignment = analysisData?.alignment_spanish_to_english;
+                            const englishIndices = alignment?.[String(index)] ?? [];
+                            setHoveredEnglishIndices(new Set(englishIndices));
+                        }}
+                        onMouseLeave={() => {
+                            setHoveredSpanishIndex(null);
+                            setHoveredEnglishIndices(new Set());
+                        }}
+                        onClick={() => handleWordClick(index)}
+                        style={{
+                            cursor: 'pointer',
+                            padding: '1px 2px',
+                            margin: '0 1px',
+                            borderRadius: '3px',
+                            backgroundColor: backgroundColor,
+                            color: isCurrentWord ? 'white' : '#333',
+                            fontWeight: isVocabWord ? 'bold' : (isCurrentWord ? 'bold' : 'normal'),
+                            border: isHoverWord ? '1px solid #ccc' : 'none',
+                        }}
+                        className="word-span"
+                    >
+                        {spanishWordDetail.text}
+                    </span>
                     {' '}
-              </span>
+                </span>
             );
         });
     };
@@ -286,35 +286,35 @@ function TextDetailPage() {
             else if (isHoverHighlighted) backgroundColor = '#e0e0e0'; // Light grey
 
             return (
-                <span key={index} style={{display: 'inline-block'}}>
-                  <span
-                      style={{
-                          padding: '1px 2px',
-                          margin: '0 1px',
-                          borderRadius: '3px',
-                          backgroundColor: backgroundColor,
-                          border: isHoverHighlighted ? '1px solid #ccc' : 'none',
-                      }}
-                      className="word-span"
-                  >
-                      {token}
-                  </span>
+                <span key={index} style={{ display: 'inline-block' }}>
+                    <span
+                        style={{
+                            padding: '1px 2px',
+                            margin: '0 1px',
+                            borderRadius: '3px',
+                            backgroundColor: backgroundColor,
+                            border: isHoverHighlighted ? '1px solid #ccc' : 'none',
+                        }}
+                        className="word-span"
+                    >
+                        {token}
+                    </span>
                     {' '}
-              </span>
+                </span>
             );
         });
     };
 
     // --- Main Render ---
     if (loading) {
-        return <CircularProgress/>;
+        return <CircularProgress />;
     }
 
     if (error) {
         // Display main error prominently
         return (
-            <Box sx={{p: 2}}>
-                <Button component={RouterLink} to="/texts" sx={{mb: 2}}>
+            <Box sx={{ p: 2 }}>
+                <Button component={RouterLink} to="/texts" sx={{ mb: 2 }}>
                     &larr; Back to All Texts
                 </Button>
                 <Alert severity="error">Error loading text details: {error}</Alert>
@@ -324,8 +324,8 @@ function TextDetailPage() {
 
     if (!text) {
         return (
-            <Box sx={{p: 2}}>
-                <Button component={RouterLink} to="/texts" sx={{mb: 2}}>
+            <Box sx={{ p: 2 }}>
+                <Button component={RouterLink} to="/texts" sx={{ mb: 2 }}>
                     &larr; Back to All Texts
                 </Button>
                 <Alert severity="warning">Text not found.</Alert>
@@ -334,8 +334,8 @@ function TextDetailPage() {
     }
 
     return (
-        <Box sx={{p: 2}}>
-            <Button component={RouterLink} to="/texts" sx={{mb: 2}}>
+        <Box sx={{ p: 2 }}>
+            <Button component={RouterLink} to="/texts" sx={{ mb: 2 }}>
                 &larr; Back to All Texts
             </Button>
             <Typography variant="h4" gutterBottom>
@@ -347,10 +347,10 @@ function TextDetailPage() {
 
             {/* Audio Player Section */}
             <Box my={3}>
-                {isAudioLoading && <CircularProgress size={20} sx={{mr: 1}}/>}
+                {isAudioLoading && <CircularProgress size={20} sx={{ mr: 1 }} />}
                 {isAudioLoading && <Typography variant="caption">Loading audio...</Typography>}
                 {audioError && !isAudioLoading &&
-                    <Alert severity="warning" sx={{mb: 1}}>Audio Error: {audioError}</Alert>
+                    <Alert severity="warning" sx={{ mb: 1 }}>Audio Error: {audioError}</Alert>
                 }
                 {audioBlobUrl && text.analysis_data && (
                     <AudioPlayer
@@ -377,7 +377,7 @@ function TextDetailPage() {
             {text.analysis_data?.indexed_spanish_words && (
                 <Box my={3} p={2} bgcolor="#f8f9fa" borderRadius={2} boxShadow="inset 0 1px 3px rgba(0,0,0,0.1)">
                     <Typography variant="h6" component="h3" gutterBottom>Spanish Text:</Typography>
-                    <Typography component="p" style={{lineHeight: 1.8}}>{renderSpanishText()}</Typography>
+                    <Typography component="p" style={{ lineHeight: 1.8 }}>{renderSpanishText()}</Typography>
                 </Box>
             )}
 
@@ -385,7 +385,7 @@ function TextDetailPage() {
             {text.analysis_data?.indexed_english_translation_words && (
                 <Box my={3} p={2} bgcolor="#f8f9fa" borderRadius={2} boxShadow="inset 0 1px 3px rgba(0,0,0,0.1)">
                     <Typography variant="h6" component="h3" gutterBottom>English Translation:</Typography>
-                    <Typography component="p" color="text.secondary" style={{lineHeight: 1.8}}>
+                    <Typography component="p" color="text.secondary" style={{ lineHeight: 1.8 }}>
                         {renderEnglishText()}
                     </Typography>
                 </Box>
@@ -395,10 +395,10 @@ function TextDetailPage() {
             {text.original_vocabulary && text.original_vocabulary.length > 0 && (
                 <Box my={3} p={2} bgcolor="#e9ecef" borderRadius={2} boxShadow="inset 0 1px 2px rgba(0,0,0,0.075)">
                     <Typography variant="h6" component="h3" gutterBottom>Vocabulary Used:</Typography>
-                    <Box component="ul" sx={{listStyle: 'disc', pl: 3}}> {/* Use Box for list styling */}
-                        {text.original_vocabulary.map((item: VocabularyItem) => (
-                            <Typography component="li" key={item.id} variant="body2"
-                                        sx={{mb: 0.5}}>{item.text}</Typography>
+                    <Box component="ul" sx={{ listStyle: 'disc', pl: 3 }}> {/* Use Box for list styling */}
+                        {text.original_vocabulary.map((word: string, index: number) => (
+                            <Typography component="li" key={index} variant="body2"
+                                sx={{ mb: 0.5 }}>{word}</Typography>
                         ))}
                     </Box>
                 </Box>
