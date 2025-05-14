@@ -186,7 +186,7 @@ function TextDetailPage() {
     const highlightSpanishIndex = useMemo(() => {
         const analysisData = text?.analysis_data as TextAnalysis | null | undefined;
         const wordTimings = analysisData?.word_timings;
-        if (!wordTimings || !isPlaying || wordTimings.length === 0) return -1;
+        if (!wordTimings || wordTimings.length === 0) return -1;
 
         const currentWordIndex = wordTimings.findIndex((timing) => timing.end > currentTime);
 
@@ -203,11 +203,8 @@ function TextDetailPage() {
             return -1;
         }
 
-        // Otherwise, highlight the word *before* the one whose end time is after current time
-        // (or the first word if currentWordIndex is 0 and we passed the start check)
-        return Math.max(0, currentWordIndex - 1);
-
-    }, [currentTime, isPlaying, text?.analysis_data]); // Use analysis_data
+        return currentWordIndex;
+    }, [currentTime, text?.analysis_data]);
 
     const highlightEnglishIndices = useMemo(() => {
         if (highlightSpanishIndex === -1) return new Set<number>();

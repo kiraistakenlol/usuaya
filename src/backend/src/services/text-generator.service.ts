@@ -33,7 +33,6 @@ You are an AI assistant helping a Russian person living in Argentina learn Spani
 Generate a short, cohesive story or conversational text in Argentinian Spanish (using 'vos' conjugation, local slang where appropriate and natural). 
 The text MUST incorporate the vocabulary words/phrases provided by the user.
 Output ONLY the generated Spanish text, with no other formatting, labels, or explanation.
- IMPORTANT: I'm debugging so keep the output compact and simple - 1 sentences max.
 `;
   // --- Prompt for Call 1: Generate Spanish Text Only --- END
 
